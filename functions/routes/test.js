@@ -10,7 +10,7 @@ router.get('/hello-world', (req, res) => {
 router.post('/create', (req, res) => {
   (async () => {
     try {
-      await db.collection('testing').doc('/' + req.body.id + '/').create({item: req.body.item});
+      await db.collection('deliverer_delivery').doc('/' + req.body.id + '/').create(req.body.item);
       return res.status(200).send("Item added to database");
     } catch (error) {
       console.log(error);
