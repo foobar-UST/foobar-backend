@@ -12,7 +12,8 @@ db.settings({ ignoreUndefinedProperties: true });
 const storage = admin.storage();
 
 async function webAuth (req, res, next) {
-  if (idToken = req.get('idToken')) {
+  const idToken = req.get('idToken');
+  if (idToken) {
     console.log(idToken);
     admin.auth().verifyIdToken(idToken).then(function(decodedToken) {
       req.uid = decodedToken.uid;

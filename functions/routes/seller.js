@@ -9,7 +9,6 @@ router.use(webAuth);
 router.get('/', async function(req, res, next) {
   let uid = req.uid;
   let seller = await db.collection('sellers_basic').doc(uid).get();
-  console.log(seller);
   if (seller.exists) {
     return res.status(200).send(seller.data());
   }
