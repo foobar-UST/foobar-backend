@@ -11,4 +11,25 @@ db.settings({ ignoreUndefinedProperties: true });
 
 const storage = admin.storage();
 
-module.exports = { functions, admin, db, storage };
+async function webAuth (req, res, next) {
+  if (idToken = req.get('idToken')) {
+    console.log(idToken);
+    admin.auth().verifyIdToken(idToken).then(function(decodedToken) {
+      req.uid = decodedToken.uid;
+      next();
+      return;
+    }).catch(function(error) {
+      res.status(401).send({
+        message: 'not authorized',
+      });
+    });
+  }
+}
+
+module.exports = {
+  functions,
+  admin,
+  db,
+  storage,
+  webAuth: webAuth,
+};

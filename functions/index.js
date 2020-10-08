@@ -16,7 +16,7 @@ app.use(cors({ origin: true }));
 app.use(express.json());
 app.use(express.text());
 app.use('/test', require('./routes/test'));
-app.use('/restaurant', require('./routes/restaurant'));
+app.use('/seller', require('./routes/seller'));
 
 
 exports.app = functions.https.onRequest(app);
