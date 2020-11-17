@@ -22,14 +22,14 @@ const webAuth = async (req, res, next) => {
     try {
       const decodedToken = await (admin.auth().verifyIdToken(idToken));
       req.uid = decodedToken.uid;
+      next();
+      return;
     } catch(err) {
       res.status(401).send({
         message: `Not authorized: ${err}`,
       });
     }
   }
-
-  next();
 }
 
 module.exports = { 
