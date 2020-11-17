@@ -19,5 +19,11 @@ firebase deploy --only functions
 firebase deploy --only functions:group_name
 ```
 
+## Emulator
+- To start emulator
+```console
+firebase emulators:start --import=./cache --export-on-exit --only firestore
+```
+
 ## Disable functions
 - To disable functions, simply uncomment them and deploy again to Firebase.
