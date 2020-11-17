@@ -1,36 +1,39 @@
-const functions = require('firebase-functions');
 const admin = require('firebase-admin');
+const serviceAccount = require('./permissions.json');
 
-var serviceAccount = require("./permissions.json");
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
-  databaseURL: "https://foobar-group-delivery-app.firebaseio.com"
+  databaseURL: 'https://foobar-group-delivery-app.firebaseio.com',
+  storageBucket: 'foobar-group-delivery-app.appspot.com',
 });
+
 const db = admin.firestore();
-db.settings({ ignoreUndefinedProperties: true });
 
-const storage = admin.storage();
+db.settings({ 
+  ignoreUndefinedProperties: true 
+});
 
-async function webAuth (req, res, next) {
-  const idToken = req.get('idToken');
+const webAuth = async (req, res, next) => {
+  const idToken = req.headers.idToken;
+
   if (idToken) {
-    console.log(idToken);
-    admin.auth().verifyIdToken(idToken).then(function(decodedToken) {
+    console.log(`Authorized: ${idToken}`);
+
+    try {
+      const decodedToken = await (admin.auth().verifyIdToken(idToken));
       req.uid = decodedToken.uid;
-      next();
-      return;
-    }).catch(function(error) {
+    } catch(err) {
       res.status(401).send({
-        message: 'not authorized',
+        message: `Not authorized: ${err}`,
       });
-    });
+    }
   }
+
+  next();
 }
 
-module.exports = {
-  functions,
-  admin,
+module.exports = { 
+  admin, 
   db,
-  storage,
-  webAuth: webAuth,
+  webAuth,
 };

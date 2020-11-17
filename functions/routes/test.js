@@ -1,20 +1,25 @@
 const express = require('express');
 const router = express.Router();
-const {db} = require('../config');
+const { db } = require('../config');
+const { TEST_COLLECTION } = require('../constants');
 
-//testing api
+// Return a 'Hello World!' response
 router.get('/hello-world', (req, res) => {
   return res.status(200).send('Hello World!');
 });
 
-router.post('/create', (req, res) => {
-  (async () => {
+// Create a test document
+router.post('/create-test', (req, res) => {
+  (async() => {
     try {
-      await db.collection('deliverer_delivery').doc('/' + req.body.id + '/').create(req.body.item);
-      return res.status(200).send("Item added to database");
-    } catch (error) {
-      console.log(error);
-      return res.status(500).send(error);
+      await db.collection(TEST_COLLECTION)
+        .doc(req.body.id)
+        .set(req.body.item)
+      
+      return res.status(200).send('Test item added to database');
+    } catch (err) {
+      console.log(err);
+      return res.status(500).send(err);
     }
   })();
 });
