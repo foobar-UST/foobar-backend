@@ -1,5 +1,5 @@
 const functions = require('firebase-functions');
-const { USERS_COLLECTION } = require('../constants');
+const { USERS_COLLECTION, USER_CART_ITEMS_SUB_COLLECTION } = require('../constants');
 const deleteUserTask = require('./users/deleteUser');
 const copyUserDataTask = require('./users/copyUserData');
 const updateDataCompletedTask = require('./users/updateDataCompleted');
@@ -22,18 +22,10 @@ exports.copyUserData = functions.firestore
   .onWrite(copyUserDataTask);
 
 /**
- * Update the 'data_completed' field in 'users'.
- * It will be true only when both the 'name' and 'photo_num' fields are not empty.
- * Triggered when a user document is updated in 'users' collection.
- */
-exports.updateUserAllowOrder = functions.firestore
-  .document(`${USERS_COLLECTION}/{userId}`)
-  .onUpdate(updateDataCompletedTask);
-
-/**
  * Update the 'roles' field in 'users'.
  * Triggered when a user document is created in 'users' collection.
  */
 exports.updateUserRole = functions.firestore
   .document(`${USERS_COLLECTION}/{userId}`)
   .onCreate(updateUserRolesTask);
+

@@ -19,3 +19,4 @@ exports.routes = functions.https.onRequest(app);
 exports.common = require('./tasks/common');
 exports.users = require('./tasks/users');
 exports.sellers = require('./tasks/sellers');
+exports.cart = require('./tasks/cart');

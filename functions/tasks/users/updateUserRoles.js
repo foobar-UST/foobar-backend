@@ -3,7 +3,7 @@ const { USERS_COLLECTION } = require('../../constants');
 
 module.exports = function updateUserRolesTask(snap, context) {
   const uid = context.params.userId;
-  const roles = 'users';
+  const roles = 'user';
 
   return db.collection(USERS_COLLECTION)
     .doc(uid)
