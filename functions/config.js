@@ -13,27 +13,7 @@ db.settings({
   ignoreUndefinedProperties: true 
 });
 
-const webAuth = async (req, res, next) => {
-  const idToken = req.headers.idToken;
-
-  if (idToken) {
-    console.log(`Authorized: ${idToken}`);
-
-    try {
-      const decodedToken = await (admin.auth().verifyIdToken(idToken));
-      req.uid = decodedToken.uid;
-      next();
-      return;
-    } catch(err) {
-      res.status(401).send({
-        message: `Not authorized: ${err}`,
-      });
-    }
-  }
-}
-
 module.exports = { 
   admin, 
-  db,
-  webAuth,
+  db
 };
