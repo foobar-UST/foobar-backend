@@ -65,9 +65,5 @@ node_modules/
 # dotenv environment variables file
 .env
 
-# Emuatlor cache
-cache/
-
-
 # Idea
-.idea/
+.idea
