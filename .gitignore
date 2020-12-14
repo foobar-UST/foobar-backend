@@ -67,3 +67,7 @@ node_modules/
 
 # Emuatlor cache
 cache/
+
+
+# Idea
+.idea/
