@@ -8,6 +8,7 @@ router.use(webAuth.verifyToken);
 
 // Add cart item for user
 router.put('/', [
+  check('seller_id').exists().isString(),
   check('item_id').exists().isString(),
   check('amounts').exists().isInt({ min: 1 })
 ], cartController.addUserCartItem);

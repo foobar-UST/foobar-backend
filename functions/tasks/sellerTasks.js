@@ -1,21 +1,21 @@
 const functions = require('firebase-functions');
 const { SELLERS_COLLECTION, SELLER_ITEMS_SUB_COLLECTION, SELLER_CATALOGS_SUB_COLLECTION } = require('../constants');
-const linkSellerCollectionsTask = require('./sellers/linkSellerCollections');
-const linkItemSubCollectionsTask = require('./sellers/linkItemSubCollections');
-const deleteCatalogItemsTask = require('./sellers/deleteCatalogItems');
-const updateItemCartSyncRequiredTask = require('./sellers/updateItemCartSyncRequired');
+const linkSellersBasicTask = require('./sellers/linkSellersBasic');
+const linkItemsBasicTask = require('./sellers/linkItemsBasic');
+const updateItemAvailabilityTask = require('./sellers/updateItemAvailability');
+//const updateCartSyncRequiredTask = require('./sellers/updateCartSyncRequired');
 
-exports.linkSellerCollections = functions.firestore
+exports.linkSellersBasic = functions.firestore
   .document(`${SELLERS_COLLECTION}/{sellerId}`)
-  .onWrite(linkSellerCollectionsTask);
+  .onWrite(linkSellersBasicTask);
 
-exports.linkItemSubCollections = functions.firestore
+exports.linkItemsBasic = functions.firestore
   .document(`${SELLERS_COLLECTION}/{sellerId}/${SELLER_ITEMS_SUB_COLLECTION}/{itemId}`)
-  .onWrite(linkItemSubCollectionsTask);
+  .onWrite(linkItemsBasicTask);
 
-exports.deleteCatalogItems = functions.firestore
+exports.updateItemAvailability = functions.firestore
   .document(`${SELLERS_COLLECTION}/{sellerId}/${SELLER_CATALOGS_SUB_COLLECTION}/{catalogId}`)
-  .onDelete(deleteCatalogItemsTask);
+  .onWrite(updateItemAvailabilityTask);
 
 /*
 exports.updateItemCartSyncRequired = functions.firestore

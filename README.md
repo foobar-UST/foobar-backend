@@ -22,7 +22,7 @@ firebase deploy --only functions:group_name
 ## Emulator
 - To start emulator
 ```console
-firebase emulators:start --import=./cache --export-on-exit --only firestore
+firebase emulators:start --import=./emulator --export-on-exit
 ```
 
 ## Disable functions

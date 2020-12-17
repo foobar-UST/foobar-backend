@@ -1,16 +1,7 @@
 const functions = require('firebase-functions');
 const { USERS_COLLECTION, USER_CART_ITEMS_SUB_COLLECTION } = require('../constants');
+const updateUserCartTask = require('./cart/updateUserCart');
 
-const updateCartItemTotalPriceTask = require('./cart/updateCartItemTotalPrice');
-const updateUserCartInfoTask = require('./cart/updateUserCartInfo');
-
-/*
-exports.updateCartItemTotalPrice = functions.firestore
+exports.updateUserCart = functions.firestore
   .document(`${USERS_COLLECTION}/{userId}/${USER_CART_ITEMS_SUB_COLLECTION}/{cartItemId}`)
-  .onWrite(updateCartItemTotalPriceTask);
-
- */
-
-exports.updateUserCartInfo = functions.firestore
-  .document(`${USERS_COLLECTION}/{userId}/${USER_CART_ITEMS_SUB_COLLECTION}/{cartItemId}`)
-  .onWrite(updateUserCartInfoTask);
+  .onWrite(updateUserCartTask);

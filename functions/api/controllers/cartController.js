@@ -1,41 +1,43 @@
 const { admin } = require('../../config');
-const { MISSING_REQUIRED_PARAMS } = require("../routes/ResponseMessage");
-const { ADD_USER_CART_ITEM_NO_REMAINING_ERROR } = require("../routes/ResponseMessage");
+const { INVALID_REQUEST_PARAMS } = require("../routes/ResponseMessage");
+const { ADD_USER_CART_ITEM_SOLD_OUT_ERROR } = require("../routes/ResponseMessage");
 const { ADD_USER_CART_ITEM_INVALID_SELLER_ERROR } = require("../routes/ResponseMessage");
 const { REDUCE_USER_CART_ITEM_NOT_FOUND } = require("../routes/ResponseMessage");
 const { validationResult } = require('express-validator');
-const UserCartItem = require("../models/UserCartItem");
-const UserCart = require("../models/UserCart");
-const SellerItem = require("../models/SellerItem");
-const Seller = require("../models/Seller");
+const UserCartItem = require("../../models/UserCartItem");
+const UserCart = require("../../models/UserCart");
+const SellerItem = require("../../models/SellerItem");
+const Seller = require("../../models/Seller");
 
+// TODO: a bit slow to add item
+// Remove index if changed
 const addUserCartItem = async (req, res) => {
-  /*---- Get parameters ----*/
   if (!validationResult(req).isEmpty()) {
-    return res.status(400).json({ message: MISSING_REQUIRED_PARAMS });
+    return res.status(400).json({ message: INVALID_REQUEST_PARAMS });
   }
 
   const userId    = req.currentUser.uid;
+  const sellerId  = req.body.seller_id;
   const itemId    = req.body.item_id;
   const amounts   = req.body.amounts;
 
-  /*---- Get item ----*/
-  let sellerItem;
+  // Get item detail
+  let item;
   try {
-    sellerItem = await SellerItem.get(itemId);
+    item = await SellerItem.getDetail(sellerId, itemId);
   } catch (err) {
     return res.status(500).json({ message: err.message });
   }
 
-  /*---- Get seller ----*/
+  // Get seller detail
   let seller;
   try {
-    seller = await Seller.getDetail(sellerItem.seller_id);
+    seller = await Seller.getDetail(sellerId);
   } catch (err) {
     return res.status(500).json({ message: err.message });
   }
 
-  /*---- Get user cart info ----*/
+  // Get UserCart info
   let userCart;
   try {
     userCart = await UserCart.get(userId);
@@ -43,58 +45,62 @@ const addUserCartItem = async (req, res) => {
     return res.status(500).json({ message: err.message });
   }
 
-  /*---- Check if the seller of the new cart item is the same as the seller
-  in the existing order ----*/
-  if (userCart !== null && userCart.seller_id !== null && userCart.seller_id !== sellerItem.seller_id) {
+  // Reject the operation when a user attempts to add a new cart item
+  // from a different seller
+  if (userCart !== null && userCart.seller_id !== null && userCart.seller_id !== sellerId) {
     return res.status(403).json({ message: ADD_USER_CART_ITEM_INVALID_SELLER_ERROR });
   }
 
-  /*---- Check if there is the seller item is available ----*/
-  if (!sellerItem.available || sellerItem.count < amounts) {
-    return res.status(403).json({ message: ADD_USER_CART_ITEM_NO_REMAINING_ERROR });
+  // Reject the operation when the item is unavailable or sold out
+  if (!item.available || item.count < amounts) {
+    return res.status(403).json({ message: ADD_USER_CART_ITEM_SOLD_OUT_ERROR });
   }
 
-  /*---- Insert the cart item ----*/
-  let result;
-
+  // Check if the new cart item already exist in the user cart,
+  // if yes, simply increment the amounts, if not, create a new one.
   try {
-    result = await UserCartItem.create(userId, {
-      item_id:              itemId,
-      item_seller_id:       seller.id,
-      item_title:           sellerItem.title,
-      item_title_zh:        sellerItem.title_zh,
-      item_price:           sellerItem.price,
-      item_image_url:       sellerItem.image_url,
-      amounts:              amounts,
-      total_price:          amounts * sellerItem.price,
-      updated_at:           admin.firestore.FieldValue.serverTimestamp()
-    });
+    const existing = await UserCartItem.findDocByItemId(userId, itemId);
+
+    if (existing === null) {
+      const newTotalPrice = amounts * item.price;
+
+      await UserCartItem.create(userId, {
+        item_id:              itemId,
+        item_seller_id:       seller.id,
+        item_title:           item.title,
+        item_title_zh:        item.title_zh,
+        item_price:           item.price,
+        item_image_url:       item.image_url,
+        amounts:              amounts,
+        total_price:          newTotalPrice
+      });
+    } else {
+      const newAmounts = existing.data().amounts + amounts;
+      const newTotalPrice = newAmounts * item.price;
+
+      await UserCartItem.update(userId, existing.id, {
+        amounts:              newAmounts,
+        total_price:          newTotalPrice
+      });
+    }
   } catch (err) {
     return res.status(500).json({ message: err.message });
   }
 
-  /*---- Update the amounts of remaining seller item ----*/
-  try {
-    await SellerItem.update(sellerItem.seller_id, itemId, {
-      count: admin.firestore.FieldValue.increment(-amounts)
-    });
-  } catch (err) {
-    return res.status(500).json({ message: err.message });
-  }
+  // TODO: Update the amounts of remaining items (after placing order)
 
-  return res.status(200).json(result);
+  return res.status(200).json();
 };
 
 const reduceUserCartItem = async (req, res) => {
-  /*---- Get parameters ----*/
   if (!validationResult(req).isEmpty()) {
-    return res.status(400).json({ message: MISSING_REQUIRED_PARAMS });
+    return res.status(400).json({ message: INVALID_REQUEST_PARAMS });
   }
 
   const userId      = req.currentUser.uid;
   const cartItemId  = req.body.cart_item_id;
 
-  /*---- Get cart item ----*/
+  // Get CartItem info
   let cartItem;
   try {
     cartItem = await UserCartItem.get(userId, cartItemId);
@@ -102,15 +108,21 @@ const reduceUserCartItem = async (req, res) => {
     return res.status(500).json({ message: err.message });
   }
 
+  // Check if the cart item exists
   if (cartItem === null) {
     return res.status(403).json({ message: REDUCE_USER_CART_ITEM_NOT_FOUND });
   }
 
-  /*---- Decrement the amounts or delete the cart item ----*/
+  // Decrement the amount of the item and update the accumulated price,
+  // or delete it where there is no more left
   try {
     if (cartItem.amounts > 1) {
+      const newAmounts      = cartItem.amounts - 1;
+      const newTotalPrice   = newAmounts * cartItem.item_price;
+
       await UserCartItem.update(userId, cartItemId, {
-        amounts: admin.firestore.FieldValue.increment(-1)
+        amounts:      newAmounts,
+        total_price:  newTotalPrice
       });
     } else {
       await UserCartItem.delete(userId, cartItemId);
@@ -118,9 +130,6 @@ const reduceUserCartItem = async (req, res) => {
   } catch (err) {
     return res.status(500).json({ message: err.message });
   }
-
-  /*---- Update user cart info's total cost ----*/
-
 
   return res.status(200).json();
 };

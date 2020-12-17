@@ -1,6 +1,6 @@
 module.exports = {
   USERS_COLLECTION:                       'users',
-  USERS_DELIVERY_COLLECTION:              'users_public',
+  USERS_DELIVERY_COLLECTION:              'users_delivery',
   USERS_PUBLIC_COLLECTION:                'users_public',
   USER_CARTS_COLLECTION:                  'user_carts',
   USER_CART_ITEMS_SUB_COLLECTION:         'cart_items',

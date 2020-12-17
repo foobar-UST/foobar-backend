@@ -1,5 +1,5 @@
+const { db } = require('../../config');
 const { USER_CART_ITEMS_SUB_COLLECTION, USER_CARTS_COLLECTION } = require("../../constants");
-const { db, admin } = require('../../config');
 
 /**
  * When the seller issues changes to an 'items',
@@ -7,7 +7,7 @@ const { db, admin } = require('../../config');
  * set 'sync_required' flag to true in 'user_carts' to notify
  * the users to update their carts.
  */
-module.exports = async function updateItemCartSyncRequired(change, context) {
+module.exports = async function updateCartSyncRequiredTask(change, context) {
   const itemId = context.params.itemId;
 
   // Get all users who are having the item in their cart

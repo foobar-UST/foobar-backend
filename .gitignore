@@ -7,7 +7,7 @@ yarn-error.log*
 firebase-debug.log*
 firebase-debug.*.log*
 
-# Firebase cache
+# Firebase emulator
 .firebase/
 
 # Firebase config
@@ -47,10 +47,10 @@ build/Release
 # Dependency directories
 node_modules/
 
-# Optional npm cache directory
+# Optional npm emulator directory
 .npm
 
-# Optional eslint cache
+# Optional eslint emulator
 .eslintcache
 
 # Optional REPL history
@@ -66,4 +66,4 @@ node_modules/
 .env
 
 # Idea
-.idea
+.idea/
