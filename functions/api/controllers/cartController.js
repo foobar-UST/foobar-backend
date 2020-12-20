@@ -1,4 +1,3 @@
-const { admin } = require('../../config');
 const { INVALID_REQUEST_PARAMS } = require("../routes/ResponseMessage");
 const { ADD_USER_CART_ITEM_SOLD_OUT_ERROR } = require("../routes/ResponseMessage");
 const { ADD_USER_CART_ITEM_INVALID_SELLER_ERROR } = require("../routes/ResponseMessage");
@@ -8,12 +7,13 @@ const UserCartItem = require("../../models/UserCartItem");
 const UserCart = require("../../models/UserCart");
 const SellerItem = require("../../models/SellerItem");
 const Seller = require("../../models/Seller");
+const { SYNC_USER_CART_ITEMS_UP_TO_DATE } = require("../routes/ResponseMessage");
+const { sendSuccessResponse } = require("../responses/sendResponse");
+const { sendErrorResponse } = require("../responses/sendResponse");
 
-// TODO: a bit slow to add item
-// Remove index if changed
 const addUserCartItem = async (req, res) => {
   if (!validationResult(req).isEmpty()) {
-    return res.status(400).json({ message: INVALID_REQUEST_PARAMS });
+    return sendErrorResponse(res, 400, INVALID_REQUEST_PARAMS);
   }
 
   const userId    = req.currentUser.uid;
@@ -26,7 +26,7 @@ const addUserCartItem = async (req, res) => {
   try {
     item = await SellerItem.getDetail(sellerId, itemId);
   } catch (err) {
-    return res.status(500).json({ message: err.message });
+    return sendErrorResponse(res, 500, err.message);
   }
 
   // Get seller detail
@@ -34,7 +34,7 @@ const addUserCartItem = async (req, res) => {
   try {
     seller = await Seller.getDetail(sellerId);
   } catch (err) {
-    return res.status(500).json({ message: err.message });
+    return sendErrorResponse(res, 500, err.message);
   }
 
   // Get UserCart info
@@ -42,18 +42,18 @@ const addUserCartItem = async (req, res) => {
   try {
     userCart = await UserCart.get(userId);
   } catch (err) {
-    return res.status(500).json({ message: err.message });
+    return sendErrorResponse(res, 500, err.message);
   }
 
   // Reject the operation when a user attempts to add a new cart item
   // from a different seller
   if (userCart !== null && userCart.seller_id !== null && userCart.seller_id !== sellerId) {
-    return res.status(403).json({ message: ADD_USER_CART_ITEM_INVALID_SELLER_ERROR });
+    return sendErrorResponse(res, 403, ADD_USER_CART_ITEM_INVALID_SELLER_ERROR);
   }
 
   // Reject the operation when the item is unavailable or sold out
   if (!item.available || item.count < amounts) {
-    return res.status(403).json({ message: ADD_USER_CART_ITEM_SOLD_OUT_ERROR });
+    return sendErrorResponse(res, 403, ADD_USER_CART_ITEM_SOLD_OUT_ERROR);
   }
 
   // Check if the new cart item already exist in the user cart,
@@ -71,6 +71,7 @@ const addUserCartItem = async (req, res) => {
         item_title_zh:        item.title_zh,
         item_price:           item.price,
         item_image_url:       item.image_url,
+        available:            true,
         amounts:              amounts,
         total_price:          newTotalPrice
       });
@@ -84,17 +85,16 @@ const addUserCartItem = async (req, res) => {
       });
     }
   } catch (err) {
-    return res.status(500).json({ message: err.message });
+    return sendErrorResponse(res, 500, err.message);
   }
 
   // TODO: Update the amounts of remaining items (after placing order)
-
-  return res.status(200).json();
+  return sendSuccessResponse(res);
 };
 
 const reduceUserCartItem = async (req, res) => {
   if (!validationResult(req).isEmpty()) {
-    return res.status(400).json({ message: INVALID_REQUEST_PARAMS });
+    return sendErrorResponse(res, 400, INVALID_REQUEST_PARAMS);
   }
 
   const userId      = req.currentUser.uid;
@@ -105,18 +105,18 @@ const reduceUserCartItem = async (req, res) => {
   try {
     cartItem = await UserCartItem.get(userId, cartItemId);
   } catch (err) {
-    return res.status(500).json({ message: err.message });
+    return sendErrorResponse(res, 500, err.message);
   }
 
   // Check if the cart item exists
   if (cartItem === null) {
-    return res.status(403).json({ message: REDUCE_USER_CART_ITEM_NOT_FOUND });
+    return sendErrorResponse(res, 403, REDUCE_USER_CART_ITEM_NOT_FOUND);
   }
 
   // Decrement the amount of the item and update the accumulated price,
   // or delete it where there is no more left
   try {
-    if (cartItem.amounts > 1) {
+    if (cartItem.amounts > 1 && cartItem.available) {
       const newAmounts      = cartItem.amounts - 1;
       const newTotalPrice   = newAmounts * cartItem.item_price;
 
@@ -128,13 +128,89 @@ const reduceUserCartItem = async (req, res) => {
       await UserCartItem.delete(userId, cartItemId);
     }
   } catch (err) {
-    return res.status(500).json({ message: err.message });
+    return sendErrorResponse(res, 500, err.message);
   }
 
-  return res.status(200).json();
+  return sendSuccessResponse(res);
+};
+
+const clearUserCart = async (req, res) => {
+  const userId = req.currentUser.uid;
+
+  try {
+    await UserCartItem.deleteAll(userId);
+  } catch (err) {
+    return sendErrorResponse(res, 500, err.message);
+  }
+
+  return sendSuccessResponse(res);
+};
+
+const syncUserCartItems = async (req, res) => {
+  const userId      = req.currentUser.uid;
+
+  // Get user cart
+  let userCart;
+  try {
+    userCart = await UserCart.get(userId);
+  } catch (err) {
+    return sendErrorResponse(res, 500, err.message);
+  }
+
+  // Check if the cart requires synchronization
+  if (userCart.sync_required !== true) {
+    return sendErrorResponse(res, 403, SYNC_USER_CART_ITEMS_UP_TO_DATE);
+  }
+
+  // Get all cart items
+  let cartItems;
+  try {
+    cartItems = await UserCartItem.getAll(userId);
+  } catch (err) {
+    return sendErrorResponse(res, 500, err.message);
+  }
+
+  // Sync with seller items
+  const syncAction = async (cartItem) => {
+    // Get seller item
+    let item;
+    try {
+      item = await SellerItem.getDetail(cartItem.item_seller_id, cartItem.item_id);
+    } catch (err) {
+      return sendErrorResponse(res, 500, err.message);
+    }
+
+    // If the seller item is removed, unavailable, out-of-stock,
+    // set available field to false
+    if (item === null || !item.available || item.count < cartItem.amounts) {
+      return await UserCartItem.update(userId, cartItem.id, {
+        available:  false
+      });
+    }
+
+    // Copy data from seller item to cart item
+    return await UserCartItem.update(userId, cartItem.id, {
+      item_title:           item.title,
+      item_title_zh:        item.title_zh,
+      item_price:           item.price,
+      item_image_url:       item.image_url,
+      total_price:          cartItem.amounts * item.price
+    });
+  };
+
+  await Promise.all(cartItems.map(cartItem => syncAction(cartItem)));
+
+  // Set sync_required to false when completed
+  await UserCart.update(userId, {
+    sync_required: false
+  });
+
+  return sendSuccessResponse(res);
 };
 
 module.exports = {
   addUserCartItem,
-  reduceUserCartItem
+  reduceUserCartItem,
+  clearUserCart,
+  syncUserCartItems
 }

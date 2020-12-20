@@ -59,6 +59,14 @@ class UserCartItem {
      await deleteCollection(`${USERS_COLLECTION}/${userId}/${USER_CART_ITEMS_SUB_COLLECTION}`);
    }
 
+   static async findRefsByItemId(itemId) {
+     const snapshot = await db.collectionGroup(USER_CART_ITEMS_SUB_COLLECTION)
+       .where('item_id', '==', itemId)
+       .get();
+
+     return snapshot.docs.map(doc => doc.ref);
+   }
+
    static async findDocByItemId(userId, itemId) {
      const snapshot = await db.collection(
        `${USERS_COLLECTION}/${userId}/${USER_CART_ITEMS_SUB_COLLECTION}`

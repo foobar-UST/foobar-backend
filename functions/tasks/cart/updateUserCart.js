@@ -23,8 +23,6 @@ module.exports = async function updateUserCartTask(change, context) {
   const snapshot = await change.after.ref.parent.get();
   const cartItems = snapshot.docs.map(doc => doc.data());
 
-  console.log('No of cart item: ' + cartItems.length);
-
   if (cartItems.length <= 0) {
     // Return if the cart is empty
     //Object.assign(userCart, { sync_required: false });

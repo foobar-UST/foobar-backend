@@ -6,5 +6,7 @@ module.exports = {
   ADD_USER_CART_ITEM_SOLD_OUT_ERROR:                   'Item is sold out',
   REDUCE_USER_CART_ITEM_NOT_FOUND:                     'Failed to find cart item',
 
+  SYNC_USER_CART_ITEMS_UP_TO_DATE:                     'Cart items are up-to-date.',
+
   INVALID_REQUEST_PARAMS:                              'Invalid request parameters'
 };

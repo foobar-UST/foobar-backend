@@ -18,6 +18,12 @@ router.post('/', [
   check('cart_item_id').exists().isString()
 ], cartController.reduceUserCartItem);
 
+// Remove all cart items of a user
+router.delete('/', cartController.clearUserCart);
+
+// Sync user cart items with seller items
+router.post('/sync', cartController.syncUserCartItems);
+
 module.exports = router;
 
 
