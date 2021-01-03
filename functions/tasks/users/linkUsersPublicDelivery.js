@@ -20,10 +20,12 @@ module.exports = async function linkUsersPublicDeliveryTask(change, context) {
   // Update user documents
   return await Promise.all([
     User.createPublic(userId, {
+      id:         user.id,
       username:   user.username,
       photo_url:  user.photo_url
     }),
     User.createDelivery(userId, {
+      id:         user.id,
       name:       user.name,
       username:   user.username,
       photo_url:  user.photo_url,

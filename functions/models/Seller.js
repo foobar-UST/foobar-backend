@@ -1,4 +1,4 @@
-const { db } = require('../config');
+const { db, admin } = require('../config');
 const { SELLERS_BASIC_COLLECTION } = require("../constants");
 const { SELLERS_COLLECTION } = require("../constants");
 
@@ -12,6 +12,16 @@ class Seller {
   static async getBasic(sellerId) {
     const document = await db.doc(`${SELLERS_BASIC_COLLECTION}/${sellerId}`).get();
     return document.exists ? document.data() : null;
+  }
+
+  static async updateDetail(sellerId, data) {
+    const docRef = db.doc(`${SELLERS_COLLECTION}/${sellerId}`);
+
+    Object.assign(data, {
+      updated_at: admin.firestore.FieldValue.serverTimestamp()
+    });
+
+    await docRef.update(data);
   }
 
   static async deleteBasic(sellerId) {

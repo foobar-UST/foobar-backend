@@ -52,6 +52,8 @@ const addUserCartItem = async (req, res) => {
   }
 
   // Reject the operation when the item is unavailable or sold out
+  // if is update -> check amounts if add -> check new amounts
+
   if (!item.available || item.count < amounts) {
     return sendErrorResponse(res, 403, ADD_USER_CART_ITEM_SOLD_OUT_ERROR);
   }
@@ -92,13 +94,14 @@ const addUserCartItem = async (req, res) => {
   return sendSuccessResponse(res);
 };
 
-const reduceUserCartItem = async (req, res) => {
+const updateUserCartItem = async (req, res) => {
   if (!validationResult(req).isEmpty()) {
     return sendErrorResponse(res, 400, INVALID_REQUEST_PARAMS);
   }
 
   const userId      = req.currentUser.uid;
   const cartItemId  = req.body.cart_item_id;
+  const newAmounts  = req.body.amounts;
 
   // Get CartItem info
   let cartItem;
@@ -113,19 +116,17 @@ const reduceUserCartItem = async (req, res) => {
     return sendErrorResponse(res, 403, REDUCE_USER_CART_ITEM_NOT_FOUND);
   }
 
-  // Decrement the amount of the item and update the accumulated price,
-  // or delete it where there is no more left
+  // Update the amount of the item and update the accumulated price,
+  // or delete it where there is no more left.
   try {
-    if (cartItem.amounts > 1 && cartItem.available) {
-      const newAmounts      = cartItem.amounts - 1;
-      const newTotalPrice   = newAmounts * cartItem.item_price;
-
+    if (newAmounts <= 0 || !cartItem.available) {
+      await UserCartItem.delete(userId, cartItemId);
+    } else {
+      const newTotalPrice = newAmounts * cartItem.item_price;
       await UserCartItem.update(userId, cartItemId, {
         amounts:      newAmounts,
         total_price:  newTotalPrice
       });
-    } else {
-      await UserCartItem.delete(userId, cartItemId);
     }
   } catch (err) {
     return sendErrorResponse(res, 500, err.message);
@@ -210,7 +211,7 @@ const syncUserCartItems = async (req, res) => {
 
 module.exports = {
   addUserCartItem,
-  reduceUserCartItem,
+  updateUserCartItem,
   clearUserCart,
   syncUserCartItems
 }

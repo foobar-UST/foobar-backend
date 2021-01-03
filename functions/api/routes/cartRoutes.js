@@ -13,10 +13,11 @@ router.put('/', [
   check('amounts').exists().isInt({ min: 1 })
 ], cartController.addUserCartItem);
 
-// Reduce the amount of a cart item
+// Update cart item for user
 router.post('/', [
-  check('cart_item_id').exists().isString()
-], cartController.reduceUserCartItem);
+  check('cart_item_id').exists().isString(),
+  check('amounts').exists().isInt({ min: 0 })
+], cartController.updateUserCartItem);
 
 // Remove all cart items of a user
 router.delete('/', cartController.clearUserCart);

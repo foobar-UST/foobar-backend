@@ -13,5 +13,6 @@ module.exports = {
   BROADCAST_MESSAGES_COLLECTION:          'broadcast_messages',
   NOTIFICATION_TOKENS_COLLECTION:         'notification_tokens',
   USER_PHOTOS_FOLDER:                     'user_photos',
+  SELLER_IMAGES_FOLDER:                   'seller_images',
   SELLER_PHOTOS_FOLDER:                   'seller_photos',
 };

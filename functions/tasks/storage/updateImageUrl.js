@@ -1,7 +1,9 @@
 const { basename } = require('path');
 const { USER_PHOTOS_FOLDER } = require('../../constants');
+const { SELLER_IMAGES_FOLDER } = require("../../constants");
 const generateResizedImageUrl = require('../utils/generateResizedImageUrl');
 const User = require("../../models/User");
+const Seller = require("../../models/Seller");
 
 module.exports = async function updateImageUrlTask(object) {
   const filePath          = object.name;                                        // '/user_photos/fFFdrdmz9zeyw7rWNjhrJaXnVOh2.jpg'
@@ -17,8 +19,8 @@ module.exports = async function updateImageUrlTask(object) {
   const hasExtension      = fileName.includes('.');
   const fileRoot          = hasExtension ? fileName.substring(0, fileName.indexOf('.')) : fileName;       // 'fFFdrdmz9zeyw7rWNjhrJaXnVOh2'
 
-  // User photos
   if (filePath.includes(USER_PHOTOS_FOLDER)) {
+    // Generate a compressed image for users
     const userId = fileRoot;
     const imageUrl = await generateResizedImageUrl(object, 720);
 
@@ -26,6 +28,12 @@ module.exports = async function updateImageUrlTask(object) {
       User.updateAuth(userId, { photoURL: imageUrl }),
       User.updateUser(userId, { photo_url: imageUrl })
     ]);
+  } else if (filePath.includes(SELLER_IMAGES_FOLDER)) {
+    // Generate a compressed image for sellers
+    const sellerId = fileRoot;
+    const imageUrl = await generateResizedImageUrl(object, 1080);
+
+    return await Seller.updateDetail(sellerId, { image_url: imageUrl });
   }
 
   return true;
