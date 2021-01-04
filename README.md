@@ -16,17 +16,18 @@ Authorization | string | use getIdToken() from Auth SDK
 ##### Success
 ```json
 {
-    data: { 
-        include fields here 
+    "data": {
+      "field1": "data",
+      "field2": "data"
     }
 }
 ```
 ##### Error
 ```json
 {
-    error: { 
-        code:       4xx,
-        message:    'Include error message here'
+    "error": {
+      "code":       "4xx",
+      "message":    "Include error message here"
     }
 }
 ```
