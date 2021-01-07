@@ -12,7 +12,8 @@ module.exports = async function updateImageUrlTask(object) {
 
   // Check if the input is a image
   if (!fileContentType.startsWith('image/')) {
-    return Error('Not a image.');
+    console.log(`Not a image. Type required 'image/*'.`);
+    return false;
   }
 
   // Check if the filename contains extension
@@ -21,19 +22,21 @@ module.exports = async function updateImageUrlTask(object) {
 
   if (filePath.includes(USER_PHOTOS_FOLDER)) {
     // Generate a compressed image for users
-    const userId = fileRoot;
     const imageUrl = await generateResizedImageUrl(object, 720);
 
-    return await Promise.all([
-      User.updateAuth(userId, { photoURL: imageUrl }),
-      User.updateUser(userId, { photo_url: imageUrl })
-    ]);
+    if (imageUrl !== null) {
+      return await Promise.all([
+        User.updateAuth(fileRoot, { photoURL: imageUrl }),
+        User.updateUser(fileRoot, { photo_url: imageUrl })
+      ]);
+    }
   } else if (filePath.includes(SELLER_IMAGES_FOLDER)) {
     // Generate a compressed image for sellers
-    const sellerId = fileRoot;
     const imageUrl = await generateResizedImageUrl(object, 1080);
 
-    return await Seller.updateDetail(sellerId, { image_url: imageUrl });
+    if (imageUrl !== null) {
+      return await Seller.updateDetail(fileRoot, { image_url: imageUrl });
+    }
   }
 
   return true;

@@ -7,6 +7,12 @@ const fs = require('fs-extra');
 
 const RESIZED_IMAGE_INFIX = '@s_';
 
+/**
+ * Generate a resized image url
+ * @param object
+ * @param width
+ * @returns signedUrl if success, null if failed
+ */
 module.exports = async function generateResizedImage(object, width) {
   // Original image
   const filePath        = object.name;                                // '/user_photos/fFFdrdmz9zeyw7rWNjhrJaXnVOh2.jpg'
@@ -15,14 +21,17 @@ module.exports = async function generateResizedImage(object, width) {
   const fileName        = basename(filePath);                         // 'fFFdrdmz9zeyw7rWNjhrJaXnVOh2.jpg'
   const bucket          = admin.storage().bucket(object.bucket);
 
-  // Return if the input is already a resized image
+  // Return null if the input is already a resized image
   if (fileName.includes(RESIZED_IMAGE_INFIX)) {
-    return new Error('Already a resized image.');
+    console.log('Input is already a resized image.');
+    return null;
   }
 
   // Working directory
-  const tempLocalDir    = join(tmpdir(), 'resize');                   // '/tmp/resize'
-  const tempLocalPath   = join(tempLocalDir, fileName);               // '/tmp/resize/fFFdrdmz9zeyw7rWNjhrJaXnVOh2.jpg'
+  // Fixed an issue when the second resized image is the same as the first one
+  // https://stackoverflow.com/questions/53986518/thumbnail-generated-from-first-image-is-duplicated-for-others-on-firebase-storag
+  const tempLocalDir      = join(`${tmpdir()}/${uuidv4()}`, 'resize');                // '/tmp/uuid/resize'
+  const tempLocalPath     = join(tempLocalDir, fileName);                                   // '/tmp/uuid/resize/1610011614287_fFFdrdmz9zeyw7rWNjhrJaXnVOh2.jpg'
 
   // Create working directory
   await fs.ensureDir(tempLocalDir);
@@ -38,7 +47,7 @@ module.exports = async function generateResizedImage(object, width) {
   const outputPrefix      = hasExtension ? fileName.replace(`.${outputExt}`, '') : fileName;   // 'fFFdrdmz9zeyw7rWNjhrJaXnVOh2'
   const outputName        = hasExtension ? `${outputPrefix}${RESIZED_IMAGE_INFIX}${width}.${outputExt}` :
                                            `${outputPrefix}${RESIZED_IMAGE_INFIX}${width}`;                           // 'fFFdrdmz9zeyw7rWNjhrJaXnVOh2@s_100.jpg'
-  const outputTempPath    = join(tempLocalDir, outputName);                                                           // '/tmp/resize/fFFdrdmz9zeyw7rWNjhrJaXnVOh2@s_100.jpg'
+  const outputTempPath    = join(tempLocalDir, outputName);                                                           // '/tmp/uuid/resize/fFFdrdmz9zeyw7rWNjhrJaXnVOh2@s_100.jpg'
   const outputBucketPath  = join(fileDir, outputName);                                                                // '/user_photos/fFFdrdmz9zeyw7rWNjhrJaXnVOh2@s_100.jpg'
 
   // Preform resize operation
@@ -56,10 +65,13 @@ module.exports = async function generateResizedImage(object, width) {
   await fs.remove(tempLocalDir);
 
   // Generate signed url
+  const expireDay = new Date();
+  expireDay.setFullYear(expireDay.getFullYear() + 10);
+
   return (await bucket.file(outputBucketPath)
       .getSignedUrl({
         action:   'read',
-        expires:  '03-01-2500',
+        expires:  expireDay
       })
   ).toString();
 }
