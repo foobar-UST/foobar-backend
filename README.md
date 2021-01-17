@@ -59,6 +59,7 @@ Endpoint for adding cart item for a user.
 body | type | description
 ---------- | -------------- | --------------
 seller_id | string | the seller of the item
+section_id | string? | the section of the item
 item_id | string | the item to be added to cart
 amounts | integer | how many items are added
 

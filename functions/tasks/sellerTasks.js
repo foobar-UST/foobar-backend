@@ -1,9 +1,10 @@
 const functions = require('firebase-functions');
-const { SELLERS_COLLECTION, SELLER_ITEMS_SUB_COLLECTION, SELLER_CATALOGS_SUB_COLLECTION } = require('../constants');
+const { SELLERS_COLLECTION, SELLER_ITEMS_SUB_COLLECTION, SELLER_CATALOGS_SUB_COLLECTION, SELLER_SECTIONS_SUB_COLLECTION } = require('../constants');
 const linkSellersBasicTask = require('./sellers/linkSellersBasic');
 const linkItemsBasicTask = require('./sellers/linkItemsBasic');
 const updateItemAvailabilityTask = require('./sellers/updateItemAvailability');
 const updateCartSyncRequiredTask = require('./sellers/updateCartSyncRequired');
+const linkSectionsBasicTask = require('./sellers/linkSectionsBasic');
 
 exports.linkSellersBasic = functions.firestore
   .document(`${SELLERS_COLLECTION}/{sellerId}`)
@@ -20,3 +21,7 @@ exports.updateItemAvailability = functions.firestore
 exports.updateItemCartSyncRequired = functions.firestore
   .document(`${SELLERS_COLLECTION}/{sellerId}/${SELLER_ITEMS_SUB_COLLECTION}/{itemId}`)
   .onWrite(updateCartSyncRequiredTask);
+
+exports.linkSectionsBasic = functions.firestore
+  .document(`${SELLERS_COLLECTION}/{sellerId}/${SELLER_SECTIONS_SUB_COLLECTION}/{sectionId}`)
+  .onWrite(linkSectionsBasicTask);

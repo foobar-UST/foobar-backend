@@ -1,9 +1,9 @@
+const deleteCollection = require("../utils/deleteCollection");
 const { db, admin } = require('../config');
 const { USER_CART_ITEMS_SUB_COLLECTION } = require("../constants");
 const { USERS_COLLECTION } = require("../constants");
-const deleteCollection = require('../utils/deleteCollection');
 
-class UserCartItem {
+class CartItem {
 
    static async get(userId, cartItemId) {
      const document = await db.doc(
@@ -20,6 +20,35 @@ class UserCartItem {
 
      return snapshot.docs.map(doc => doc.data());
    }
+
+   static async getByItemId(itemId) {
+     const snapshot = await db.collectionGroup(USER_CART_ITEMS_SUB_COLLECTION)
+       .where('item_id', '==', itemId)
+       .get();
+
+     if (snapshot.empty) return null;
+
+     const cartItems = [];
+     snapshot.forEach(doc => {
+       cartItems.push(doc.data());
+     })
+
+     return cartItems;
+   }
+
+  static async findDocByItemId(userId, itemId) {
+    const snapshot = await db.collection(
+      `${USERS_COLLECTION}/${userId}/${USER_CART_ITEMS_SUB_COLLECTION}`
+    )
+      .where('item_id', '==', itemId)
+      .get();
+
+    // Not cart item matches with the required item id
+    if (snapshot.empty) return null;
+
+    const document = snapshot.docs[0];
+    return document.exists ? document : null;
+  }
 
    static async create(userId, cartItem) {
      const docRef = db.collection(
@@ -58,29 +87,6 @@ class UserCartItem {
    static async deleteAll(userId) {
      await deleteCollection(`${USERS_COLLECTION}/${userId}/${USER_CART_ITEMS_SUB_COLLECTION}`);
    }
-
-   static async findRefsByItemId(itemId) {
-     const snapshot = await db.collectionGroup(USER_CART_ITEMS_SUB_COLLECTION)
-       .where('item_id', '==', itemId)
-       .get();
-
-     return snapshot.docs.map(doc => doc.ref);
-   }
-
-   static async findDocByItemId(userId, itemId) {
-     const snapshot = await db.collection(
-       `${USERS_COLLECTION}/${userId}/${USER_CART_ITEMS_SUB_COLLECTION}`
-     )
-       .where('item_id', '==', itemId)
-       .get();
-
-     // Not cart item matches with the required item id
-     if (snapshot.size === 0) return null;
-
-     const document = snapshot.docs[0];
-
-     return document.exists ? document : null;
-   }
 }
 
-module.exports = UserCartItem;
+module.exports = CartItem;

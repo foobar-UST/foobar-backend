@@ -13,6 +13,7 @@ module.exports = async function updateUserCartTask(change, context) {
   // Fields to update
   let userCart            = {};
   let cartSellerId        = null;
+  let cartSectionId       = null;
   let cartSellerType      = null;
   let cartItemsCount      = 0;
   let cartSubtotalCost    = 0;
@@ -29,6 +30,7 @@ module.exports = async function updateUserCartTask(change, context) {
   } else {
     cartItemsCount  = cartItems.length;
     cartSellerId    = cartItems[0].item_seller_id;
+    cartSectionId   = cartItems[0].item_section_id;
 
     // Get seller type
     const seller = await Seller.getDetail(cartSellerId);
@@ -43,6 +45,7 @@ module.exports = async function updateUserCartTask(change, context) {
   Object.assign(userCart, {
     seller_id:      cartSellerId,
     seller_type:    cartSellerType,
+    section_id:     cartSectionId,
     items_count:    cartItemsCount,
     subtotal_cost:  cartSubtotalCost,
     delivery_cost:  cartDeliveryCost,

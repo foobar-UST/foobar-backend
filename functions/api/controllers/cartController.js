@@ -1,13 +1,13 @@
-const { INVALID_REQUEST_PARAMS } = require("../routes/ResponseMessage");
-const { ADD_USER_CART_ITEM_SOLD_OUT_ERROR } = require("../routes/ResponseMessage");
-const { ADD_USER_CART_ITEM_INVALID_SELLER_ERROR } = require("../routes/ResponseMessage");
-const { REDUCE_USER_CART_ITEM_NOT_FOUND } = require("../routes/ResponseMessage");
+const { INVALID_REQUEST_PARAMS } = require("../responses/ResponseMessage");
+const { ADD_USER_CART_ITEM_SOLD_OUT_ERROR } = require("../responses/ResponseMessage");
+const { ADD_USER_CART_ITEM_INVALID_SELLER_ERROR } = require("../responses/ResponseMessage");
+const { REDUCE_USER_CART_ITEM_NOT_FOUND } = require("../responses/ResponseMessage");
 const { validationResult } = require('express-validator');
-const UserCartItem = require("../../models/UserCartItem");
+const CartItem = require("../../models/CartItem");
 const UserCart = require("../../models/UserCart");
 const SellerItem = require("../../models/SellerItem");
 const Seller = require("../../models/Seller");
-const { SYNC_USER_CART_ITEMS_UP_TO_DATE } = require("../routes/ResponseMessage");
+const { SYNC_USER_CART_ITEMS_UP_TO_DATE } = require("../responses/ResponseMessage");
 const { sendSuccessResponse } = require("../responses/sendResponse");
 const { sendErrorResponse } = require("../responses/sendResponse");
 
@@ -18,6 +18,7 @@ const addUserCartItem = async (req, res) => {
 
   const userId    = req.currentUser.uid;
   const sellerId  = req.body.seller_id;
+  const sectionId = req.body.section_id;
   const itemId    = req.body.item_id;
   const amounts   = req.body.amounts;
 
@@ -61,14 +62,16 @@ const addUserCartItem = async (req, res) => {
   // Check if the new cart item already exist in the user cart,
   // if yes, simply increment the amounts, if not, create a new one.
   try {
-    const existing = await UserCartItem.findDocByItemId(userId, itemId);
+    const existingItem = await CartItem.findDocByItemId(userId, itemId);
 
-    if (existing === null) {
+    if (!existingItem) {
       const newTotalPrice = amounts * item.price;
 
-      await UserCartItem.create(userId, {
+      await CartItem.create(userId, {
+        user_id:              userId,
         item_id:              itemId,
         item_seller_id:       seller.id,
+        item_section_id:      sectionId,
         item_title:           item.title,
         item_title_zh:        item.title_zh,
         item_price:           item.price,
@@ -78,10 +81,10 @@ const addUserCartItem = async (req, res) => {
         total_price:          newTotalPrice
       });
     } else {
-      const newAmounts = existing.data().amounts + amounts;
+      const newAmounts = existingItem.data().amounts + amounts;
       const newTotalPrice = newAmounts * item.price;
 
-      await UserCartItem.update(userId, existing.id, {
+      await CartItem.update(userId, existingItem.id, {
         amounts:              newAmounts,
         total_price:          newTotalPrice
       });
@@ -90,7 +93,6 @@ const addUserCartItem = async (req, res) => {
     return sendErrorResponse(res, 500, err.message);
   }
 
-  // TODO: Update the amounts of remaining items (after placing order)
   return sendSuccessResponse(res);
 };
 
@@ -106,7 +108,7 @@ const updateUserCartItem = async (req, res) => {
   // Get CartItem info
   let cartItem;
   try {
-    cartItem = await UserCartItem.get(userId, cartItemId);
+    cartItem = await CartItem.get(userId, cartItemId);
   } catch (err) {
     return sendErrorResponse(res, 500, err.message);
   }
@@ -120,10 +122,10 @@ const updateUserCartItem = async (req, res) => {
   // or delete it where there is no more left.
   try {
     if (newAmounts <= 0 || !cartItem.available) {
-      await UserCartItem.delete(userId, cartItemId);
+      await CartItem.delete(userId, cartItemId);
     } else {
       const newTotalPrice = newAmounts * cartItem.item_price;
-      await UserCartItem.update(userId, cartItemId, {
+      await CartItem.update(userId, cartItemId, {
         amounts:      newAmounts,
         total_price:  newTotalPrice
       });
@@ -139,7 +141,7 @@ const clearUserCart = async (req, res) => {
   const userId = req.currentUser.uid;
 
   try {
-    await UserCartItem.deleteAll(userId);
+    await CartItem.deleteAll(userId);
   } catch (err) {
     return sendErrorResponse(res, 500, err.message);
   }
@@ -166,7 +168,7 @@ const syncUserCartItems = async (req, res) => {
   // Get all cart items
   let cartItems;
   try {
-    cartItems = await UserCartItem.getAll(userId);
+    cartItems = await CartItem.getAll(userId);
   } catch (err) {
     return sendErrorResponse(res, 500, err.message);
   }
@@ -181,16 +183,16 @@ const syncUserCartItems = async (req, res) => {
       return sendErrorResponse(res, 500, err.message);
     }
 
-    // If the seller item is removed, unavailable, out-of-stock,
-    // set available field to false
+    // If the seller item is removed, unavailable, out-of-stock, just set 'available' field to false.
+    // User has to remove the item from the front-end.
     if (item === null || !item.available || item.count < cartItem.amounts) {
-      return await UserCartItem.update(userId, cartItem.id, {
+      return await CartItem.update(userId, cartItem.id, {
         available:  false
       });
     }
 
-    // Copy data from seller item to cart item
-    return await UserCartItem.update(userId, cartItem.id, {
+    // If the seller item is available, copy data from seller item to cart item.
+    return await CartItem.update(userId, cartItem.id, {
       item_title:           item.title,
       item_title_zh:        item.title_zh,
       item_price:           item.price,

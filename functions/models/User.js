@@ -10,6 +10,11 @@ class User {
     await admin.auth().updateUser(userId, authProfile);
   }
 
+  static async getUserDetail(userId) {
+    const document = await db.doc(`${USERS_COLLECTION}/${userId}`).get();
+    return document.exists ? document.data() : null;
+  }
+
   static async createUser(userId, user) {
     const docRef = db.doc(`${USERS_COLLECTION}/${userId}`);
 

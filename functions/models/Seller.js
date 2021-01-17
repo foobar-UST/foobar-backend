@@ -1,4 +1,4 @@
-const { db, admin } = require('../config');
+const { db } = require('../config');
 const { SELLERS_BASIC_COLLECTION } = require("../constants");
 const { SELLERS_COLLECTION } = require("../constants");
 
@@ -16,14 +16,6 @@ class Seller {
 
   static async updateDetail(sellerId, data) {
     const docRef = db.doc(`${SELLERS_COLLECTION}/${sellerId}`);
-
-    /*
-    Object.assign(data, {
-      updated_at: admin.firestore.FieldValue.serverTimestamp()
-    });
-
-     */
-
     await docRef.update(data);
   }
 

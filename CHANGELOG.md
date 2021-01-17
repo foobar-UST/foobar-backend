@@ -1,5 +1,4 @@
 # Changelog
-
 ## 2020-10-6
 - Added updateUserRole.
 - Added modifySellersBasicDoc.

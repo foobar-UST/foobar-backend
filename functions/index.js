@@ -10,6 +10,7 @@ app.use(express.text());
 // Url: https://us-central1-foobar-group-delivery-app.cloudfunctions.net/api
 app.use('/test', require('./api/routes/testRoutes'));
 app.use('/cart', require('./api/routes/cartRoutes'));
+app.use('/order', require('./api/routes/orderRoutes'));
 
 exports.api = functions.runWith({ timeoutSeconds: 10 }).https.onRequest(app);
 

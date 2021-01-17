@@ -1,5 +1,5 @@
 const User = require("../../models/User");
-const UserCartItem = require("../../models/UserCartItem");
+const CartItem = require("../../models/CartItem");
 const UserCart = require("../../models/UserCart");
 const Suggest = require("../../models/Suggest");
 
@@ -12,7 +12,7 @@ module.exports = async function deleteUserResourcesTask(user) {
   await Promise.all([
     User.deletePhoto(userId),
     Suggest.deleteAllBasic(userId),
-    UserCartItem.deleteAll(userId),
+    CartItem.deleteAll(userId),
     UserCart.delete(userId)
   ]);
 

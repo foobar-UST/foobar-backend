@@ -1,6 +1,6 @@
+const deleteCollection = require("../utils/deleteCollection");
 const { USERS_COLLECTION } = require("../constants");
 const { SUGGESTS_BASIC_COLLECTION } = require("../constants");
-const deleteCollection = require('../utils/deleteCollection');
 
 class Suggest {
 

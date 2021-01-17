@@ -1,10 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const webAuth = require('../middlewares/webAuth');
 const testController = require('../controllers/testController');
 const { check } = require("express-validator");
-
-//router.use(webAuth.verifyToken);
 
 // Return a 'Hello World!' response
 router.get('/hello-world', [

@@ -10,10 +10,11 @@ const RESIZED_IMAGE_INFIX = '@s_';
 /**
  * Generate a resized image url
  * @param object
- * @param width
- * @returns signedUrl if success, null if failed
+ * @param width of the resized image
+ * @param height of the resized image
+ * @returns url of the resized image if success, null if failed
  */
-module.exports = async function generateResizedImage(object, width) {
+module.exports = async function generateResizedImage(object, width, height) {
   // Original image
   const filePath        = object.name;                                // '/user_photos/fFFdrdmz9zeyw7rWNjhrJaXnVOh2.jpg'
   const fileContentType = object.contentType;                         // 'image/jpeg'
@@ -45,13 +46,13 @@ module.exports = async function generateResizedImage(object, width) {
   // Output image
   const outputExt         = hasExtension ? fileName.split('.').pop() : '';                                   // 'jpg'
   const outputPrefix      = hasExtension ? fileName.replace(`.${outputExt}`, '') : fileName;   // 'fFFdrdmz9zeyw7rWNjhrJaXnVOh2'
-  const outputName        = hasExtension ? `${outputPrefix}${RESIZED_IMAGE_INFIX}${width}.${outputExt}` :
-                                           `${outputPrefix}${RESIZED_IMAGE_INFIX}${width}`;                           // 'fFFdrdmz9zeyw7rWNjhrJaXnVOh2@s_100.jpg'
+  const outputName        = hasExtension ? `${outputPrefix}${RESIZED_IMAGE_INFIX}${width}_${height}.${outputExt}` :
+                                           `${outputPrefix}${RESIZED_IMAGE_INFIX}${width}_${height}`;                 // 'fFFdrdmz9zeyw7rWNjhrJaXnVOh2@s_100.jpg'
   const outputTempPath    = join(tempLocalDir, outputName);                                                           // '/tmp/uuid/resize/fFFdrdmz9zeyw7rWNjhrJaXnVOh2@s_100.jpg'
   const outputBucketPath  = join(fileDir, outputName);                                                                // '/user_photos/fFFdrdmz9zeyw7rWNjhrJaXnVOh2@s_100.jpg'
 
   // Preform resize operation
-  await sharp(tempLocalPath).resize({ width: width }).toFile(outputTempPath);
+  await sharp(tempLocalPath).resize({ width: width, height: height }).toFile(outputTempPath);
 
   // Upload output to bucket
   await bucket.upload(outputTempPath, {
