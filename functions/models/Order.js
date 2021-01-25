@@ -4,16 +4,30 @@ const { db, admin } = require('../config');
 
 class Order {
 
-  static async createDetail(orderDetail) {
-    const docRef = db.collection(ORDERS_COLLECTION).doc();
+  static async getDetail(orderId) {
+    const document = await db.doc(`${ORDERS_COLLECTION}/${orderId}`).get();
+    return document.exists ? document.data() : null;
+  }
+
+  static async getBasic(orderId) {
+    const document = await db.doc(`${ORDERS_BASIC_COLLECTION}/${orderId}`).get();
+    return document.exists ? document.data() : null;
+  }
+
+  static createDoc() {
+    return db.collection(ORDERS_COLLECTION).doc();
+  }
+
+  static async createDetail(orderDoc, orderDetail) {
+    //const docRef = db.collection(ORDERS_COLLECTION).doc();
 
     Object.assign(orderDetail, {
-      id:             docRef.id,
+      id:             orderDoc.id,
       created_at:     admin.firestore.FieldValue.serverTimestamp(),
       updated_at:     admin.firestore.FieldValue.serverTimestamp()
     });
 
-    await docRef.set(orderDetail);
+    await orderDoc.set(orderDetail);
   }
 
   static async createBasic(orderId, orderBasic) {

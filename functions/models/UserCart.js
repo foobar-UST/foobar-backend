@@ -8,6 +8,23 @@ class UserCart {
     return document.exists ? document.data() : null;
   }
 
+  static async getUserIdsBy(field, value) {
+    const snapshot = await db.collection(USER_CARTS_COLLECTION)
+      .where(field, '==', value)
+      .get();
+
+    if (snapshot.empty) {
+      return [];
+    }
+
+    const userCarts = [];
+    snapshot.forEach(doc => {
+      userCarts.push(doc.data().user_id)
+    });
+
+    return userCarts;
+  }
+
   static async update(userId, data) {
     const docRef = db.doc(`${USER_CARTS_COLLECTION}/${userId}`);
 

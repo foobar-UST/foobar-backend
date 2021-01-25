@@ -7,14 +7,13 @@ const { USER_ROLES_USER } = require("../../constants");
 const { check } = require('express-validator');
 
 router.use(webAuth.verifyToken);
-router.use(roleCheck.verifyRoles(USER_ROLES_USER));
+router.use(roleCheck.verifyRoles([USER_ROLES_USER]));
 
 // Add cart item for user
 router.put('/', [
-  check('seller_id').exists().isString(),
-  check('section_id').optional().isString(),
   check('item_id').exists().isString(),
-  check('amounts').exists().isInt({ min: 1 })
+  check('amounts').exists().isInt({ min: 1 }),
+  check('section_id').optional().isString()
 ], cartController.addUserCartItem);
 
 // Update cart item for user
@@ -27,7 +26,7 @@ router.post('/', [
 router.delete('/', cartController.clearUserCart);
 
 // Sync user cart items with seller items
-router.post('/sync', cartController.syncUserCartItems);
+router.post('/sync', cartController.syncUserCart);
 
 module.exports = router;
 

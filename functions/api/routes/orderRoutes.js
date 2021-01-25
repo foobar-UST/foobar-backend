@@ -3,8 +3,7 @@ const router = express.Router();
 const webAuth = require('../middlewares/webAuth');
 const roleCheck = require('../middlewares/roleCheck');
 const orderController = require('../controllers/orderController');
-const orderStates = require('../../models/orderStates');
-const { USER_ROLES_DELIVERER } = require("../../constants");
+const SectionState = require("../../models/SectionState");
 const { USER_ROLES_SELLER } = require("../../constants");
 const { USER_ROLES_USER } = require("../../constants");
 const { PAYMENT_METHOD_COD } = require("../../constants");
@@ -12,27 +11,40 @@ const { check } = require('express-validator');
 
 router.use(webAuth.verifyToken);
 
-// Add a new order (from user)
+// User: Add a new order
 router.put('/', [
-  check('message').exists().isString(),
+  check('message').optional().isString(),
   check('payment_method').exists().isIn([PAYMENT_METHOD_COD])
 ],
-  roleCheck.verifyRoles(USER_ROLES_USER),
-  orderController.addNewOrder
+  roleCheck.verifyRoles([USER_ROLES_USER]),
+  orderController.placeOrder
 );
 
-// Update order state (from seller, deliverer)
-router.post('/state', [
-  check('order_state').exists().isIn(orderStates)
+// User: Cancel the order
+router.post('/cancel', [
+  check('order_id').exists().isString()
 ],
-  roleCheck.verifyRoles(USER_ROLES_USER, [USER_ROLES_SELLER, USER_ROLES_DELIVERER]),
+  roleCheck.verifyRoles([USER_ROLES_USER]),
+  orderController.cancelOrder
+);
+
+// Seller: Update order state
+router.post('/update', [
+  check('order_id').exists().isString(),
+  check('order_state').exists().isIn(Object.values(SectionState))
+],
+  roleCheck.verifyRoles([USER_ROLES_USER, USER_ROLES_SELLER]),
   orderController.updateOrderState
 );
 
-// Update order current location (from deliverer)
+// Seller: Confirm pickup order delivered
+router.post('/pickup/complete');
 
-// Cancel a order (from user, seller)
+// Deliverer: Update order location ('/deliver/location')
+router.post('/deliver/location');
 
+// Deliverer: Conform order delivered ('/deliver/complete')
+router.post('/deliver/complete');
 
 module.exports = router;
 

@@ -26,12 +26,15 @@ class CartItem {
        .where('item_id', '==', itemId)
        .get();
 
-     if (snapshot.empty) return null;
+     if (snapshot.empty) {
+       return null;
+     }
 
      const cartItems = [];
+
      snapshot.forEach(doc => {
        cartItems.push(doc.data());
-     })
+     });
 
      return cartItems;
    }
@@ -84,8 +87,16 @@ class CartItem {
      await docRef.delete();
    }
 
-   static async deleteAll(userId) {
+   static async deleteAllForUser(userId) {
      await deleteCollection(`${USERS_COLLECTION}/${userId}/${USER_CART_ITEMS_SUB_COLLECTION}`);
+   }
+
+   static async deleteAllForUsers(userIds) {
+     const deleteJobs = userIds.map(userId => {
+       return CartItem.deleteAllForUser(userId);
+     });
+
+     await Promise.all(deleteJobs);
    }
 }
 

@@ -39,7 +39,7 @@ module.exports = {
   ORDER_STATE_DELIVERED:                  'delivered',
   ORDER_STATE_CANCELLED:                  'cancelled',
 
-  PAYMENT_METHOD_COD:                     'cod',
+  PAYMENT_METHOD_COD:                     'cash_on_delivery',
 
   BROADCAST_MESSAGES_COLLECTION:          'broadcast_messages',
   NOTIFICATION_TOKENS_COLLECTION:         'notification_tokens',

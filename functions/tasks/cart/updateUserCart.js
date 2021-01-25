@@ -1,56 +1,82 @@
 const Seller = require("../../models/Seller");
 const UserCart = require("../../models/UserCart");
-
-const DELIVERY_COST = 20;
+const SellerSection = require("../../models/SellerSection");
+const { get12HourString } = require("../../utils/DateUtils");
+const { getShortDateString } = require("../../utils/DateUtils");
 
 /**
- * Update the 'user_carts' info when a cart item is modified in 'cart_items'.
+ * Update 'user_carts' info when a cart item is modified in 'cart_items'.
  */
 module.exports = async function updateUserCartTask(change, context) {
-  //const cartItem = change.after.exists ? change.after.data() : null;
-  const userId = context.params.userId;
-
-  // Fields to update
-  let userCart            = {};
-  let cartSellerId        = null;
-  let cartSectionId       = null;
-  let cartSellerType      = null;
-  let cartItemsCount      = 0;
-  let cartSubtotalCost    = 0;
-  let cartDeliveryCost    = 0;
-  let cartTotalCost       = 0;
+  const prevCartItem  = change.before.exists ? change.before.data() : null;
+  const newCartItem   = change.after.exists ? change.after.data() : null;
+  const userId        = context.params.userId;
+  const cartData      = {};
 
   // Get all remaining cart items
-  const snapshot = await change.after.ref.parent.get();
-  const cartItems = snapshot.docs.map(doc => doc.data());
+  const itemsSnapshot     = await change.after.ref.parent.get();
+  const itemsRemain       = itemsSnapshot.docs.map(doc => doc.data());
+  const itemsRemainCount  = itemsRemain.length;
 
-  if (cartItems.length <= 0) {
-    // Return if the cart is empty
-    //Object.assign(userCart, { sync_required: false });
-  } else {
-    cartItemsCount  = cartItems.length;
-    cartSellerId    = cartItems[0].item_seller_id;
-    cartSectionId   = cartItems[0].item_section_id;
-
-    // Get seller type
-    const seller = await Seller.getDetail(cartSellerId);
-    cartSellerType = seller.type;
-
-    // Calculate the costs
-    cartItems.forEach(item => cartSubtotalCost += item.total_price);
-    cartDeliveryCost = cartSellerType === 0 ? 0 : DELIVERY_COST;    // Free-of-charge for on-campus order
-    cartTotalCost = cartSubtotalCost + cartDeliveryCost;
+  // Remove cart document when there is no more item in cart
+  if (itemsRemainCount <= 0) {
+    return await UserCart.delete(userId);
   }
 
-  Object.assign(userCart, {
-    seller_id:      cartSellerId,
-    seller_type:    cartSellerType,
-    section_id:     cartSectionId,
-    items_count:    cartItemsCount,
-    subtotal_cost:  cartSubtotalCost,
-    delivery_cost:  cartDeliveryCost,
-    total_cost:     cartTotalCost
+  const sellerId          = itemsRemain[0].item_seller_id;
+  const sectionId         = itemsRemain[0].item_section_id;
+
+  if (!prevCartItem && itemsRemainCount === 1) {
+    // Fields to update when the first item is inserted in cart.
+    console.log('[UpdateUserCart]: full update.');
+    const [sellerDetail, sectionDetail] = await Promise.all([
+      Seller.getDetail(sellerId),
+      SellerSection.getDetail(sellerId, sectionId)
+    ]);
+
+    // isOffCampusSection ?
+    const cartTitle         = sectionDetail ?
+      `(${getShortDateString(sectionDetail.delivery_time.toDate())} @ ${get12HourString(sectionDetail.delivery_time.toDate())}) ${sectionDetail.title}` :
+      sellerDetail.name;
+    const cartTitleZh       = sectionDetail ? sectionDetail.title_zh : sellerDetail.name_zh;
+    const cartImageUrl      = sectionDetail ? sectionDetail.image_url : sellerDetail.image_url;
+    const sellerType        = sellerDetail.type;
+    const pickupLocation    = sectionDetail ? sectionDetail.delivery_location : sellerDetail.location;
+    const deliveryCost      = sectionDetail ? sectionDetail.delivery_cost : 0;
+    const deliveryTime      = sectionDetail ? sectionDetail.delivery_time : null;
+
+    Object.assign(cartData, {
+      user_id:              userId,
+      title:                cartTitle,
+      title_zh:             cartTitleZh,
+      seller_id:            sellerId,
+      seller_type:          sellerType,
+      section_id:           sectionId,
+      delivery_time:        deliveryTime,
+      image_url:            cartImageUrl,
+      pickup_location:      pickupLocation,
+      delivery_cost:        deliveryCost,
+    });
+  } else {
+    // Fields to update when there are existing items in cart.
+    console.log('[UpdateUserCart]: cost update.');
+    const userCart          = await UserCart.get(userId);
+    const deliveryCost      = userCart.delivery_cost;
+
+    Object.assign(cartData, {
+      delivery_cost:        deliveryCost
+    });
+  }
+
+  const itemsPrices       = itemsRemain.map(cartItem => cartItem.total_price);
+  const subtotalCost      = itemsPrices.reduce((sum, total_price) => sum + total_price);
+  const totalCost         = cartData.delivery_cost + subtotalCost;
+
+  Object.assign(cartData, {
+    items_count:          itemsRemainCount,
+    subtotal_cost:        subtotalCost,
+    total_cost:           totalCost
   });
 
-  return await UserCart.upsert(userId, userCart);
+  return await UserCart.upsert(userId, cartData);
 }

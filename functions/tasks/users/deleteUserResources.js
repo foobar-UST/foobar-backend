@@ -2,6 +2,7 @@ const User = require("../../models/User");
 const CartItem = require("../../models/CartItem");
 const UserCart = require("../../models/UserCart");
 const Suggest = require("../../models/Suggest");
+const Seller = require("../../models/Seller");
 
 /**
  * Clean up the resources when a user is deleted from Auth.
@@ -11,9 +12,10 @@ module.exports = async function deleteUserResourcesTask(user) {
 
   await Promise.all([
     User.deletePhoto(userId),
-    Suggest.deleteAllBasic(userId),
-    CartItem.deleteAll(userId),
-    UserCart.delete(userId)
+    CartItem.deleteAllForUser(userId),
+    UserCart.delete(userId),
+    Seller.detachFromUser(userId)
+    // TODO: Suggest.deleteAllBasic(userId),
   ]);
 
   return await User.deleteUser(userId);

@@ -5,6 +5,10 @@ const SellerSection = require("../../models/SellerSection");
 const SellerItem = require("../../models/SellerItem");
 const generateIdentifier = require("../../utils/generateIdentifier");
 const Order = require("../../models/Order");
+const SectionState = require("../../models/SectionState");
+const OrderState = require("../../models/OrderState");
+const { ORDER_CANCEL_ORDER_SELLER_OFFLINE } = require("../responses/ResponseMessage");
+const { ORDER_CANCEL_ORDER_NOT_PROCESSING } = require("../responses/ResponseMessage");
 const { sendSuccessResponse } = require("../responses/sendResponse");
 const { admin } = require("../../config");
 const { ORDER_STATE_PROCESSING } = require("../../constants");
@@ -15,32 +19,31 @@ const { INVALID_REQUEST_PARAMS } = require("../responses/ResponseMessage");
 const { ORDER_ADD_NEW_ORDER_PROFILE_NOT_COMPLETED } = require("../responses/ResponseMessage");
 const { USER_ROLES_USER } = require("../../constants");
 const { ORDER_ADD_NEW_ORDER_SECTION_UNAVAILABLE } = require("../responses/ResponseMessage");
-const { SELLER_SECTION_STATE_AVAILABLE } = require("../../constants");
 const { ORDER_ADD_NEW_ORDER_SELLER_OFFLINE } = require("../responses/ResponseMessage");
 const { ORDER_ADD_NEW_ORDER_UNAVAILABLE_ITEM } = require("../responses/ResponseMessage");
 const { ORDER_ADD_NEW_ORDER_LESS_THAN_MIN_SPEND } = require("../responses/ResponseMessage");
 const { ORDER_ADD_NEW_ORDER_NO_CART_ITEM } = require("../responses/ResponseMessage");
 const { ORDER_ADD_NEW_ORDER_CART_NEED_SYNC } = require("../responses/ResponseMessage");
 
-const addNewOrder = async (req, res) => {
+const placeOrder = async (req, res) => {
   if (!validationResult(req).isEmpty()) {
     return sendErrorResponse(res, 400, INVALID_REQUEST_PARAMS);
   }
 
-  const userId          = req.currentUser.uid;
-  const userDetail      = req.userDetail;
-  const paymentMethod   = req.body.payment_method;
-  const message         = req.body.message;
+  const userId = req.currentUser.uid;
+  const userDetail = req.userDetail;
+  const paymentMethod = req.body.payment_method;
+  const message = req.body.message;
 
-  const userCart        = await UserCart.get(userId);
-  const cartItems       = await CartItem.getAll(userId);
+  const [userCart, cartItems] = await Promise.all([
+    UserCart.get(userId),
+    CartItem.getAll(userId)
+  ]);
 
-  let sellerDetail;
-  let sectionDetail;
+  const {seller_id: sellerId, seller_type: sellerType, section_id: sectionId} = userCart;
 
-  const sellerId        = userCart.seller_id;
-  const sellerType      = userCart.seller_type;
-  const groupSectionId  = userCart.seller_section_id;
+  const sellerDetail = await Seller.getDetail(sellerId);
+  const sectionDetail = await SellerSection.getDetail(sellerId, sectionId);
 
   // Ensure the user has filled in his profile
   if (!userDetail.roles.includes(USER_ROLES_USER) || !userDetail.name || !userDetail.phone_num) {
@@ -71,6 +74,7 @@ const addNewOrder = async (req, res) => {
     return sendErrorResponse(res, 403, ORDER_ADD_NEW_ORDER_UNAVAILABLE_ITEM);
   }
 
+  // Ensure all items have enough quantities
   if (!itemDetails.every(item => item.count > 0)) {
     return sendErrorResponse(res, 403, ORDER_ADD_NEW_ORDER_UNAVAILABLE_ITEM);
   }
@@ -79,8 +83,6 @@ const addNewOrder = async (req, res) => {
   if (!itemDetails.every(item => item.seller_id === itemDetails[0].seller_id)) {
     return sendErrorResponse(res, 403, ORDER_ADD_NEW_ORDER_UNAVAILABLE_ITEM);
   }
-
-  sellerDetail = await Seller.getDetail(sellerId);
 
   // Ensure the total cost of the order is greater than the minimum spend requirement of the seller
   if (userCart.total_cost < sellerDetail.min_spend) {
@@ -92,15 +94,20 @@ const addNewOrder = async (req, res) => {
     return sendErrorResponse(res, 403, ORDER_ADD_NEW_ORDER_SELLER_OFFLINE);
   }
 
-  if (groupSectionId) {
-    sectionDetail = await SellerSection.getDetail(sellerId, groupSectionId);
-    // Ensure the group order section is still available
-    if (sectionDetail.state !== SELLER_SECTION_STATE_AVAILABLE) {
+  // Checking for off-campus order
+  if (sectionId) {
+    // Ensure the section is currently opened
+    if (!SellerSection.isRecentSection(sectionDetail)) {
+      return sendErrorResponse(res, 403, ORDER_ADD_NEW_ORDER_SECTION_UNAVAILABLE);
+    }
+
+    // Ensure the section is still available
+    if (sectionDetail.state !== SectionState.AVAILABLE) {
       return sendErrorResponse(res, 403, ORDER_ADD_NEW_ORDER_SECTION_UNAVAILABLE);
     }
   }
 
-  // Insert a new order
+  // Collect all order items
   const orderItems = cartItems.map(cartItem => {
     return {
       id:                   uuidv4(),
@@ -114,38 +121,71 @@ const addNewOrder = async (req, res) => {
       total_price:          cartItem.total_price
     }
   });
+
+  // Create a new order
+  const newOrderDoc = Order.createDoc();
+  const newOrderId = newOrderDoc.id;
+  const newOrderIdentifier = generateIdentifier(5);
+
   const newOrderDetail = {
     user_id:                userId,
     seller_id:              sellerId,
+    section_id:             sectionId,
     deliverer_id:           null,
-    identifier:             generateIdentifier(5),
+    identifier:             newOrderIdentifier,
     type:                   sellerType,
     order_items:            orderItems,
     state:                  ORDER_STATE_PROCESSING,
     is_paid:                true,
     payment_method:         paymentMethod,
     message:                message,
-    delivery_location:      sectionDetail ? sectionDetail.delivery_location : sellerDetail.location.address,
-    delivery_location_zh:   sectionDetail ? sectionDetail.delivery_location_zh : sellerDetail.location.address_zh,
+    delivery_location:      sectionDetail ? sectionDetail.delivery_location : sellerDetail.location,
     subtotal_cost:          userCart.subtotal_cost,
     delivery_cost:          userCart.delivery_cost,
     total_cost:             userCart.total_cost,
   };
 
-  await Order.createDetail(newOrderDetail);
+  await Order.createDetail(newOrderDoc, newOrderDetail);
 
-  // Decrement the count of all items
-  const decrementJobs = [];
-  decrementJobs.push(cartItems.map(cartItem => {
+  // Decrement the quantity of purchased seller items
+  await Promise.all(cartItems.map(cartItem => {
     return SellerItem.updateDetail(sellerId, cartItem.item_id, {
-      count:  admin.firestore.FieldValue.increment(-cartItem.amounts)
+      count: admin.firestore.FieldValue.increment(-cartItem.amounts)
     });
   }));
 
-  await Promise.all(decrementJobs);
+  // Clear the cart
+  await CartItem.deleteAllForUser(userId);
 
-  // Clear all cart items
-  await CartItem.deleteAll(userId);
+  return sendSuccessResponse(res, {
+    order_id: newOrderId,
+    order_identifier: newOrderIdentifier
+  });
+};
+
+const cancelOrder = async (req, res) => {
+  if (!validationResult(req).isEmpty()) {
+    return sendErrorResponse(res, 400, INVALID_REQUEST_PARAMS);
+  }
+
+  const orderId = req.body.order_id;
+
+  const orderDetail = await Order.getDetail(orderId);
+  const sellerDetail = await Seller.getDetail(orderDetail.seller_id);
+
+  // Check if the seller is online
+  if (!sellerDetail.online) {
+    return sendErrorResponse(res, 403, ORDER_CANCEL_ORDER_SELLER_OFFLINE);
+  }
+
+  // Check the current order state.
+  // User can only can cancel order during 'processing' state.
+  if (orderDetail.state !== OrderState.PROCESSING) {
+    return sendErrorResponse(res, 403, ORDER_CANCEL_ORDER_NOT_PROCESSING);
+  }
+
+  // Set order state to cancelled
+  await Order.updateDetail(orderId, { state: OrderState.CANCELLED });
 
   return sendSuccessResponse(res);
 };
@@ -154,9 +194,18 @@ const updateOrderState = async (req, res) => {
   if (!validationResult(req).isEmpty()) {
     return sendErrorResponse(res, 400, INVALID_REQUEST_PARAMS);
   }
+
+  const orderId = req.body.order_id;
+  const orderState = req.body.order_state;
+
+  // Update order state
+  await Order.updateDetail(orderId, { state: orderState });
+
+  return sendSuccessResponse(res);
 };
 
 module.exports = {
-  addNewOrder,
+  placeOrder,
+  cancelOrder,
   updateOrderState
 }

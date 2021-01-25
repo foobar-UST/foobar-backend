@@ -1,14 +1,16 @@
+const SectionState = require("./SectionState");
+const { isSameDay } = require("../utils/DateUtils");
+const { SELLER_SECTIONS_SUB_COLLECTION } = require("../constants");
 const { SELLER_SECTIONS_BASIC_SUB_COLLECTION } = require("../constants");
 const { SELLERS_COLLECTION } = require("../constants");
-const { db } = require('../config');
+const { db, admin } = require('../config');
 
 class SellerSection {
 
   static async getDetail(sellerId, sectionId) {
     const document = await db.doc(
-      `${SELLERS_COLLECTION}/${sellerId}/${SELLER_SECTIONS_BASIC_SUB_COLLECTION}/${sectionId}`
+      `${SELLERS_COLLECTION}/${sellerId}/${SELLER_SECTIONS_SUB_COLLECTION}/${sectionId}`
     ).get();
-
     return document.exists ? document.data() : null;
   }
 
@@ -16,7 +18,6 @@ class SellerSection {
     const docRef = db.doc(
       `${SELLERS_COLLECTION}/${sellerId}/${SELLER_SECTIONS_BASIC_SUB_COLLECTION}/${sectionId}`
     );
-
     await docRef.set(sectionBasic);
   }
 
@@ -24,8 +25,16 @@ class SellerSection {
     const docRef = db.doc(
       `${SELLERS_COLLECTION}/${sellerId}/${SELLER_SECTIONS_BASIC_SUB_COLLECTION}/${sectionId}`
     );
-
     await docRef.delete();
+  }
+
+  static isRecentSection(sectionDetail) {
+    return sectionDetail.available &&
+      sectionDetail.state === SectionState.AVAILABLE &&
+      isSameDay(
+        admin.firestore.Timestamp.now().toDate(),
+        sectionDetail.delivery_time.toDate()
+      );
   }
 }
 

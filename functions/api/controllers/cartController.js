@@ -7,90 +7,96 @@ const CartItem = require("../../models/CartItem");
 const UserCart = require("../../models/UserCart");
 const SellerItem = require("../../models/SellerItem");
 const Seller = require("../../models/Seller");
-const { SYNC_USER_CART_ITEMS_UP_TO_DATE } = require("../responses/ResponseMessage");
+const SellerSection = require("../../models/SellerSection");
+const { ADD_USER_CART_ITEM_INVALID_SECTION_ERROR } = require("../responses/ResponseMessage");
+const { ADD_USER_CART_NOT_RECENT_SECTION } = require("../responses/ResponseMessage");
+const { isSameDay } = require("../../utils/DateUtils");
+const { ADD_USER_CART_ITEM_SELLER_OFFLINE } = require("../responses/ResponseMessage");
+const { SYNC_USER_CART_UP_TO_DATE } = require("../responses/ResponseMessage");
 const { sendSuccessResponse } = require("../responses/sendResponse");
 const { sendErrorResponse } = require("../responses/sendResponse");
+const { admin } = require('../../config');
 
 const addUserCartItem = async (req, res) => {
   if (!validationResult(req).isEmpty()) {
     return sendErrorResponse(res, 400, INVALID_REQUEST_PARAMS);
   }
 
-  const userId    = req.currentUser.uid;
-  const sellerId  = req.body.seller_id;
-  const sectionId = req.body.section_id;
-  const itemId    = req.body.item_id;
-  const amounts   = req.body.amounts;
+  const userId          = req.currentUser.uid;
+  const itemSectionId   = req.body.section_id;
+  const itemId          = req.body.item_id;
+  const amounts         = req.body.amounts;
 
-  // Get item detail
-  let item;
-  try {
-    item = await SellerItem.getDetail(sellerId, itemId);
-  } catch (err) {
-    return sendErrorResponse(res, 500, err.message);
+  const sellerDetail    = await Seller.getDetailHavingItem(itemId);
+  const sectionDetail   = itemSectionId ? await SellerSection.getDetail(sellerDetail.id, itemSectionId) : null;
+
+  const [itemDetail, userCart] = await Promise.all([
+    SellerItem.getDetail(sellerDetail.id, itemId),
+    UserCart.get(userId)
+  ]);
+
+  // Reject if the seller is offline
+  if (!sellerDetail.online) {
+    return sendErrorResponse(res, 403, ADD_USER_CART_ITEM_SELLER_OFFLINE);
   }
 
-  // Get seller detail
-  let seller;
-  try {
-    seller = await Seller.getDetail(sellerId);
-  } catch (err) {
-    return sendErrorResponse(res, 500, err.message);
-  }
-
-  // Get UserCart info
-  let userCart;
-  try {
-    userCart = await UserCart.get(userId);
-  } catch (err) {
-    return sendErrorResponse(res, 500, err.message);
-  }
-
-  // Reject the operation when a user attempts to add a new cart item
-  // from a different seller
-  if (userCart !== null && userCart.seller_id !== null && userCart.seller_id !== sellerId) {
+  // Reject if the user attempts to add a new cart item from a different seller
+  if (userCart && userCart.seller_id && userCart.seller_id !== sellerDetail.id) {
     return sendErrorResponse(res, 403, ADD_USER_CART_ITEM_INVALID_SELLER_ERROR);
   }
 
-  // Reject the operation when the item is unavailable or sold out
-  // if is update -> check amounts if add -> check new amounts
+  if (sectionDetail) {
+    const isRecentSection = sectionDetail.available &&
+      sectionDetail.state === 'available' &&
+      isSameDay(
+        admin.firestore.Timestamp.now().toDate(),
+        sectionDetail.delivery_time.toDate()
+      );
 
-  if (!item.available || item.count < amounts) {
+    // Reject if the user attempts to add a new cart item from a different section
+    if (userCart && userCart.section_id && userCart.section_id !== itemSectionId) {
+      return sendErrorResponse(res, 403, ADD_USER_CART_ITEM_INVALID_SECTION_ERROR);
+    }
+
+    // Reject if the off-campus section is not ready.
+    if (!isRecentSection) {
+      return sendErrorResponse(res, 403, ADD_USER_CART_NOT_RECENT_SECTION);
+    }
+  }
+
+  // Reject if the item is unavailable or not having enough quantity
+  if (!itemDetail.available || itemDetail.count < amounts) {
     return sendErrorResponse(res, 403, ADD_USER_CART_ITEM_SOLD_OUT_ERROR);
   }
 
   // Check if the new cart item already exist in the user cart,
   // if yes, simply increment the amounts, if not, create a new one.
-  try {
-    const existingItem = await CartItem.findDocByItemId(userId, itemId);
+  const existingCartItem = await CartItem.findDocByItemId(userId, itemId);
 
-    if (!existingItem) {
-      const newTotalPrice = amounts * item.price;
+  if (!existingCartItem) {
+    const newTotalPrice = amounts * itemDetail.price;
 
-      await CartItem.create(userId, {
-        user_id:              userId,
-        item_id:              itemId,
-        item_seller_id:       seller.id,
-        item_section_id:      sectionId,
-        item_title:           item.title,
-        item_title_zh:        item.title_zh,
-        item_price:           item.price,
-        item_image_url:       item.image_url,
-        available:            true,
-        amounts:              amounts,
-        total_price:          newTotalPrice
-      });
-    } else {
-      const newAmounts = existingItem.data().amounts + amounts;
-      const newTotalPrice = newAmounts * item.price;
+    await CartItem.create(userId, {
+      user_id:              userId,
+      item_id:              itemId,
+      item_seller_id:       sellerDetail.id,
+      item_section_id:      itemSectionId,
+      item_title:           itemDetail.title,
+      item_title_zh:        itemDetail.title_zh,
+      item_price:           itemDetail.price,
+      item_image_url:       itemDetail.image_url,
+      available:            true,
+      amounts:              amounts,
+      total_price:          newTotalPrice
+    });
+  } else {
+    const newAmounts = existingCartItem.data().amounts + amounts;
+    const newTotalPrice = newAmounts * itemDetail.price;
 
-      await CartItem.update(userId, existingItem.id, {
-        amounts:              newAmounts,
-        total_price:          newTotalPrice
-      });
-    }
-  } catch (err) {
-    return sendErrorResponse(res, 500, err.message);
+    await CartItem.update(userId, existingCartItem.id, {
+      amounts:              newAmounts,
+      total_price:          newTotalPrice
+    });
   }
 
   return sendSuccessResponse(res);
@@ -105,33 +111,23 @@ const updateUserCartItem = async (req, res) => {
   const cartItemId  = req.body.cart_item_id;
   const newAmounts  = req.body.amounts;
 
-  // Get CartItem info
-  let cartItem;
-  try {
-    cartItem = await CartItem.get(userId, cartItemId);
-  } catch (err) {
-    return sendErrorResponse(res, 500, err.message);
-  }
+  const cartItem    = await CartItem.get(userId, cartItemId);
 
   // Check if the cart item exists
-  if (cartItem === null) {
+  if (!cartItem) {
     return sendErrorResponse(res, 403, REDUCE_USER_CART_ITEM_NOT_FOUND);
   }
 
   // Update the amount of the item and update the accumulated price,
   // or delete it where there is no more left.
-  try {
-    if (newAmounts <= 0 || !cartItem.available) {
-      await CartItem.delete(userId, cartItemId);
-    } else {
-      const newTotalPrice = newAmounts * cartItem.item_price;
-      await CartItem.update(userId, cartItemId, {
-        amounts:      newAmounts,
-        total_price:  newTotalPrice
-      });
-    }
-  } catch (err) {
-    return sendErrorResponse(res, 500, err.message);
+  if (newAmounts <= 0 || !cartItem.available) {
+    await CartItem.delete(userId, cartItemId);
+  } else {
+    const newTotalPrice = newAmounts * cartItem.item_price;
+    await CartItem.update(userId, cartItemId, {
+      amounts:      newAmounts,
+      total_price:  newTotalPrice
+    });
   }
 
   return sendSuccessResponse(res);
@@ -139,72 +135,64 @@ const updateUserCartItem = async (req, res) => {
 
 const clearUserCart = async (req, res) => {
   const userId = req.currentUser.uid;
-
-  try {
-    await CartItem.deleteAll(userId);
-  } catch (err) {
-    return sendErrorResponse(res, 500, err.message);
-  }
-
+  await CartItem.deleteAllForUser(userId);
   return sendSuccessResponse(res);
 };
 
-const syncUserCartItems = async (req, res) => {
-  const userId      = req.currentUser.uid;
-
-  // Get user cart
-  let userCart;
-  try {
-    userCart = await UserCart.get(userId);
-  } catch (err) {
-    return sendErrorResponse(res, 500, err.message);
-  }
+const syncUserCart = async (req, res) => {
+  const userId = req.currentUser.uid;
 
   // Check if the cart requires synchronization
-  if (userCart.sync_required !== true) {
-    return sendErrorResponse(res, 403, SYNC_USER_CART_ITEMS_UP_TO_DATE);
+  const userCart = await UserCart.get(userId);
+  if (!userCart || !userCart.sync_required) {
+    return sendErrorResponse(res, 403, SYNC_USER_CART_UP_TO_DATE);
   }
 
-  // Get all cart items
-  let cartItems;
-  try {
-    cartItems = await CartItem.getAll(userId);
-  } catch (err) {
-    return sendErrorResponse(res, 500, err.message);
-  }
+  // Sync all cart items
+  const cartItems = await CartItem.getAll(userId);
+  const syncItemAction = async (cartItem) => {
+    const itemDetail = await SellerItem.getDetail(cartItem.item_seller_id, cartItem.item_id);
 
-  // Sync with seller items
-  const syncAction = async (cartItem) => {
-    // Get seller item
-    let item;
-    try {
-      item = await SellerItem.getDetail(cartItem.item_seller_id, cartItem.item_id);
-    } catch (err) {
-      return sendErrorResponse(res, 500, err.message);
+    // If the seller item is removed, unavailable, out-of-stock,
+    // set 'available' field to false. User is expected to remove the item
+    // on their own.
+    if (!itemDetail || !itemDetail.available || itemDetail.count < cartItem.amounts) {
+      return CartItem.update(userId, cartItem.id, { available: false });
     }
 
-    // If the seller item is removed, unavailable, out-of-stock, just set 'available' field to false.
-    // User has to remove the item from the front-end.
-    if (item === null || !item.available || item.count < cartItem.amounts) {
-      return await CartItem.update(userId, cartItem.id, {
-        available:  false
-      });
-    }
-
-    // If the seller item is available, copy data from seller item to cart item.
-    return await CartItem.update(userId, cartItem.id, {
-      item_title:           item.title,
-      item_title_zh:        item.title_zh,
-      item_price:           item.price,
-      item_image_url:       item.image_url,
-      total_price:          cartItem.amounts * item.price
+    // If the seller item is available,
+    // copy the data from seller item.
+    return CartItem.update(userId, cartItem.id, {
+      item_title: itemDetail.title,
+      item_title_zh: itemDetail.title_zh,
+      item_price: itemDetail.price,
+      item_image_url: itemDetail.image_url,
+      total_price: cartItem.amounts * itemDetail.price
     });
   };
 
-  await Promise.all(cartItems.map(cartItem => syncAction(cartItem)));
+  const syncItemJobs = cartItems.map(cartItem => syncItemAction(cartItem));
+  await Promise.all(syncItemJobs);
+
+  // Sync user cart info, and reset 'sync_required'.
+  const [sellerDetail, sectionDetail] = await Promise.all([
+    Seller.getDetail(userCart.seller_id),
+    SellerSection.getDetail(userCart.seller_id, userCart.section_id)
+  ]);
+
+  const cartTitle = sectionDetail ? sectionDetail.title : sellerDetail.name;
+  const cartTitleZh = sectionDetail ? sectionDetail.title_zh : sellerDetail.name_zh;
+  const cartImageUrl = sectionDetail ? sectionDetail.image_url : sellerDetail.image_url;
+  const deliveryTime = sectionDetail ? sectionDetail.delivery_time : null;
+  const pickupLocation = sectionDetail ? sectionDetail.delivery_location : sellerDetail.location;
 
   // Set sync_required to false when completed
   await UserCart.update(userId, {
+    title: cartTitle,
+    title_zh: cartTitleZh,
+    image_url: cartImageUrl,
+    delivery_time: deliveryTime,
+    pickup_location: pickupLocation,
     sync_required: false
   });
 
@@ -215,5 +203,5 @@ module.exports = {
   addUserCartItem,
   updateUserCartItem,
   clearUserCart,
-  syncUserCartItems
+  syncUserCart
 }

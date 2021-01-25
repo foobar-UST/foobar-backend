@@ -1,0 +1,133 @@
+rules_version = '2';
+
+// Wildcards
+// {docId}: match document in the current collection
+// {anyDoc=**}: match any document in the collection (including subcollection)
+
+// Some conditions of request.auth:
+// signed in: request.auth != null;
+// specific email domain: request.auth.token.email.match('.*google[.]com$');
+// email is verified: request.auth.token.email_verified;
+
+// Some conditions of request.resource:
+// field is a number: request.resource.data.rating is number;
+// field in range: request.resource.data.rating <= 5;
+// field has character count: request.resource.data.headline.size() > 2;
+// document creator is a user: request.resource.data.reviewerId == request.auth.uid;
+
+// Some conditions of resource:
+// only update existing field: request.resource.data.score == resource.data.score;
+// only read in certain state: resource.data.state == "published";
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+  	// Make sure only the user himself can request his own document,
+    // but only cloud functions can update it.
+    match /users/{userId} {
+    	//allow read, write: if true;
+    	allow read, write: if request.auth.uid == userId;
+      
+      // Make sure only the user himself can modify the cart_items collection.
+      match /cart_items/{cartItemId} {
+      	allow read, write: if request.auth.uid == userId;
+      }
+      
+      // TODO: Make sure only the users can accecss his suggest items,
+      // but only cloud functions can update it.
+    	match /suggests_basic/{suggestId} {
+    		allow read: if request.auth.uid == userId;
+        allow write: if true;
+    	}
+    }
+    
+    // Make sure only cloud function can modify users_delivery collection.
+    match /users_delivery/{userId} {
+    	allow read: if request.auth != null;
+      allow write: if false;
+    }
+    
+    // Make sure only cloud function can modify users_public collection.
+    match /users_public/{userId} {
+    	allow read: if request.auth != null;
+      allow write: if false;
+    }
+    
+    // Make sure only the user himself can read his user_carts document,
+    // and only functions can update it.
+    match /user_carts/{userId} {
+    	allow read: if request.auth.uid == userId;
+      allow write: if false;
+    }
+    
+    // TODO: Make sure everyone can read the advertises items and
+    // only seller can modify the them.
+    match /advertises_basic/{advertiseId} {
+    	allow read: if true;
+      allow write: if true;
+    }
+    
+    // TODO: Make sure everyone can access sellers collection,
+    // but only the seller himself can modify it.
+    match /sellers/{sellerId} {
+    	//allow read: if request.auth != null;
+      allow read: if true;
+      allow write: if true;
+      
+      // TODO: Make sure everyone can access sellers collection,
+    	// but only the seller himself can modify it.
+    	match /catalogs/{catalogId} {
+     		allow read: if true;
+      	allow write: if true;
+    	}
+      
+      // TODO: Make sure everyone can access items collection,
+    	// but only cloud functions can update it.
+    	match /items/{itemId} {
+    		allow read: if true;
+      	allow write: if true;
+    	}
+      
+      // TODO: Make sure everyone can access items_basic collection,
+    	// but only cloud functions can update it.
+    	match /items_basic/{itemId} {
+    		allow read: if true;
+      	allow write: if true;
+    	}
+      
+      // TODO: Make sure everyone can access sections collection,
+      // but only the seller himself can modify it.
+      match /sections/{sectionId} {
+      	allow read: if true;
+        allow write: if true;
+      }
+    }
+    
+    // TODO: Make sure everyone can access sections_basic collection,
+    // but only cloud functions can update it.
+    // Use wildcard for collection group query.
+    match /{path=**}/sections_basic/{sectionId} {
+      allow read: if true;
+      allow write: if true;
+    }
+    
+    // TODO: Make sure everyone can access sellers_basic collection,
+    // but only cloud functions can update it.
+    match /sellers_basic/{sellerId} {
+    	allow read: if true;
+      allow write: if true;
+    }
+  	
+    // TODO: Make sure everyone can access payment_methods collection,
+    // but only admin can update it.
+    match /payment_methods/{paymentMethodId} {
+    	allow read: if true;
+      allow write: if true;
+    }
+
+    // TODO: 
+    match /orders/{orderId} {
+      allow read: if true;
+      allow write: if true;
+    }
+  }
+}
