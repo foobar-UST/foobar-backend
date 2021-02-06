@@ -1,50 +1,54 @@
 const express = require('express');
 const router = express.Router();
-const webAuth = require('../middlewares/webAuth');
-const roleCheck = require('../middlewares/roleCheck');
 const orderController = require('../controllers/orderController');
-const SectionState = require("../../models/SectionState");
+const { placeOrderValidationRules } = require("../validator/orderValidators");
+const { USER_ROLES_DELIVERER } = require("../../constants");
 const { USER_ROLES_SELLER } = require("../../constants");
 const { USER_ROLES_USER } = require("../../constants");
-const { PAYMENT_METHOD_COD } = require("../../constants");
-const { check } = require('express-validator');
+const validateResult = require('../middlewares/validateResult');
+const verifyRoles = require("../middlewares/verifyRoles");
+const verifyIdToken = require("../middlewares/verifyIdToken");
+const { confirmOrderDeliveredValidationRules } = require("../validator/orderValidators");
+const { updateOrderLocationValidationRules } = require("../validator/orderValidators");
+const { updateOrderStateValidationRules } = require("../validator/orderValidators");
+const { cancelOrderValidationRules } = require("../validator/orderValidators");
 
-router.use(webAuth.verifyToken);
+router.use(verifyIdToken);
 
 // User: Add a new order
-router.put('/', [
-  check('message').optional().isString(),
-  check('payment_method').exists().isIn([PAYMENT_METHOD_COD])
-],
-  roleCheck.verifyRoles([USER_ROLES_USER]),
+router.put('/',
+  placeOrderValidationRules(), validateResult,
+  verifyRoles([USER_ROLES_USER]),
   orderController.placeOrder
 );
 
 // User: Cancel the order
-router.post('/cancel', [
-  check('order_id').exists().isString()
-],
-  roleCheck.verifyRoles([USER_ROLES_USER]),
+router.post('/cancel',
+  cancelOrderValidationRules(), validateResult,
+  verifyRoles([USER_ROLES_USER]),
   orderController.cancelOrder
 );
 
 // Seller: Update order state
-router.post('/update', [
-  check('order_id').exists().isString(),
-  check('order_state').exists().isIn(Object.values(SectionState))
-],
-  roleCheck.verifyRoles([USER_ROLES_USER, USER_ROLES_SELLER]),
+router.post('/update',
+  updateOrderStateValidationRules(), validateResult,
+  verifyRoles([USER_ROLES_USER, USER_ROLES_SELLER]),
   orderController.updateOrderState
 );
 
-// Seller: Confirm pickup order delivered
-router.post('/pickup/complete');
-
 // Deliverer: Update order location ('/deliver/location')
-router.post('/deliver/location');
+router.post('/deliver/location',
+  updateOrderLocationValidationRules(), validateResult,
+  verifyRoles([USER_ROLES_USER, USER_ROLES_DELIVERER]),
+  orderController.updateOrderLocation
+);
 
-// Deliverer: Conform order delivered ('/deliver/complete')
-router.post('/deliver/complete');
+// Deliverer: Confirm order delivered ('/deliver/confirm')
+router.post('/deliver/confirm',
+  confirmOrderDeliveredValidationRules(), validateResult,
+  verifyRoles([USER_ROLES_USER, USER_ROLES_DELIVERER]),
+  orderController.confirmOrderDelivered
+);
 
 module.exports = router;
 

@@ -1,22 +1,25 @@
 const { sendErrorResponse } = require("../responses/sendResponse");
 const { admin } = require('../../config');
-const { AUTH_ERROR_DECODE, AUTH_ERROR_NO_TOKEN } = require("../responses/ResponseMessage");
+const { VERIFY_ID_TOKEN_INVALID_TOKEN, VERIFY_ID_TOKEN_MISSING_TOKEN } = require("../responses/ResponseMessage");
 
 /**
  * Verify the identity of the user by parsing the id token.
  * Add req.currentUser which is a FirebaseUser object.
  */
-module.exports.verifyToken = async (req, res, next) => {
+const verifyIdToken = async (req, res, next) => {
   const idToken = req.headers.authorization;
 
   if (idToken) {
     try {
+      // Return a decoded token.
       req.currentUser = await admin.auth().verifyIdToken(idToken);
       return next();
     } catch (err) {
-      return sendErrorResponse(res, 401, AUTH_ERROR_DECODE);
+      return sendErrorResponse(res, 401, VERIFY_ID_TOKEN_INVALID_TOKEN);
     }
   } else {
-    return sendErrorResponse(res, 401, AUTH_ERROR_NO_TOKEN);
+    return sendErrorResponse(res, 401, VERIFY_ID_TOKEN_MISSING_TOKEN);
   }
 };
+
+module.exports = verifyIdToken;

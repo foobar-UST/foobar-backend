@@ -19,6 +19,7 @@ class Seller {
     const snapshot = await db.collectionGroup(SELLER_ITEMS_SUB_COLLECTION)
       .where('id', '==', itemId)
       .get();
+
     const itemDetailDoc = snapshot.empty ? null : snapshot.docs[0];
     // Get back top level seller document
     const document = await itemDetailDoc.ref.parent.parent.get();
@@ -53,6 +54,7 @@ class Seller {
 
   static async createBasic(sellerId, sellerBasic) {
     const docRef = db.doc(`${SELLERS_BASIC_COLLECTION}/${sellerId}`);
+    Object.assign(sellerBasic, { id: sellerId });
     await docRef.set(sellerBasic);
   }
 }

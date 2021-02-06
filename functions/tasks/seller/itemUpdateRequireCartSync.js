@@ -22,7 +22,7 @@ module.exports = async function itemUpdateRequireCartSyncTask(change, context) {
     return true;
   }
 
-  // Get the ids of the users having the item in cart and
+  // Get the ids of the user having the item in cart and
   // set 'sync_required' flag for them.
   const cartItems = await CartItem.getByItemId(itemId);
 

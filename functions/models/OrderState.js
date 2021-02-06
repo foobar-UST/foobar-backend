@@ -1,3 +1,4 @@
+const { ORDER_STATE_ARCHIVED } = require("../constants");
 const { ORDER_STATE_CANCELLED } = require("../constants");
 const { ORDER_STATE_DELIVERED } = require("../constants");
 const { ORDER_STATE_READY_FOR_PICK_UP } = require("../constants");
@@ -11,6 +12,7 @@ const OrderState = Object.freeze({
   IN_TRANSIT: ORDER_STATE_IN_TRANSIT,
   READY_FOR_PICK_UP: ORDER_STATE_READY_FOR_PICK_UP,
   DELIVERED: ORDER_STATE_DELIVERED,
+  ARCHIVED: ORDER_STATE_ARCHIVED,
   CANCELLED: ORDER_STATE_CANCELLED
 });
 

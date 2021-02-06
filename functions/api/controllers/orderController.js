@@ -5,17 +5,21 @@ const SellerSection = require("../../models/SellerSection");
 const SellerItem = require("../../models/SellerItem");
 const generateIdentifier = require("../../utils/generateIdentifier");
 const Order = require("../../models/Order");
-const SectionState = require("../../models/SectionState");
+const { SectionState } = require("../../models/SectionState");
 const OrderState = require("../../models/OrderState");
+const SellerType = require("../../models/SellerType");
+const OrderType = require("../../models/OrderType");
+const OrderLocation = require("../../models/OrderLocation");
+const { generateLongDynamicLink } = require("../../tasks/utils/generateDynamicLink");
+const { isSameDay } = require("../../utils/DateUtils");
+const { UPDATE_ORDER_STATE_INVALID_STATE } = require("../responses/ResponseMessage");
 const { ORDER_CANCEL_ORDER_SELLER_OFFLINE } = require("../responses/ResponseMessage");
 const { ORDER_CANCEL_ORDER_NOT_PROCESSING } = require("../responses/ResponseMessage");
 const { sendSuccessResponse } = require("../responses/sendResponse");
 const { admin } = require("../../config");
 const { ORDER_STATE_PROCESSING } = require("../../constants");
-const { validationResult } = require("express-validator");
 const { sendErrorResponse } = require("../responses/sendResponse");
 const { v4: uuidv4 } = require('uuid');
-const { INVALID_REQUEST_PARAMS } = require("../responses/ResponseMessage");
 const { ORDER_ADD_NEW_ORDER_PROFILE_NOT_COMPLETED } = require("../responses/ResponseMessage");
 const { USER_ROLES_USER } = require("../../constants");
 const { ORDER_ADD_NEW_ORDER_SECTION_UNAVAILABLE } = require("../responses/ResponseMessage");
@@ -26,10 +30,6 @@ const { ORDER_ADD_NEW_ORDER_NO_CART_ITEM } = require("../responses/ResponseMessa
 const { ORDER_ADD_NEW_ORDER_CART_NEED_SYNC } = require("../responses/ResponseMessage");
 
 const placeOrder = async (req, res) => {
-  if (!validationResult(req).isEmpty()) {
-    return sendErrorResponse(res, 400, INVALID_REQUEST_PARAMS);
-  }
-
   const userId = req.currentUser.uid;
   const userDetail = req.userDetail;
   const paymentMethod = req.body.payment_method;
@@ -40,10 +40,14 @@ const placeOrder = async (req, res) => {
     CartItem.getAll(userId)
   ]);
 
-  const {seller_id: sellerId, seller_type: sellerType, section_id: sectionId} = userCart;
+  const {
+    seller_id: sellerId,
+    seller_type: sellerType,
+    section_id: sectionId
+  } = userCart;
 
   const sellerDetail = await Seller.getDetail(sellerId);
-  const sectionDetail = await SellerSection.getDetail(sellerId, sectionId);
+  const sectionDetail = await SellerSection.getDetail(sectionId);
 
   // Ensure the user has filled in his profile
   if (!userDetail.roles.includes(USER_ROLES_USER) || !userDetail.name || !userDetail.phone_num) {
@@ -94,15 +98,17 @@ const placeOrder = async (req, res) => {
     return sendErrorResponse(res, 403, ORDER_ADD_NEW_ORDER_SELLER_OFFLINE);
   }
 
-  // Checking for off-campus order
-  if (sectionId) {
-    // Ensure the section is currently opened
-    if (!SellerSection.isRecentSection(sectionDetail)) {
-      return sendErrorResponse(res, 403, ORDER_ADD_NEW_ORDER_SECTION_UNAVAILABLE);
-    }
+  // Validate off-campus order
+  if (sectionDetail) {
+    const timestampNow = admin.firestore.Timestamp.now();
+    const isSectionAvailable = sectionDetail.available &&
+      sectionDetail.state === SectionState.AVAILABLE &&
+      sectionDetail.cutoff_time > timestampNow &&
+      sectionDetail.delivery_time > timestampNow &&
+      isSameDay(timestampNow.toDate(), sectionDetail.delivery_time.toDate());
 
-    // Ensure the section is still available
-    if (sectionDetail.state !== SectionState.AVAILABLE) {
+    // Ensure the section is currently opened
+    if (!isSectionAvailable) {
       return sendErrorResponse(res, 403, ORDER_ADD_NEW_ORDER_SECTION_UNAVAILABLE);
     }
   }
@@ -126,14 +132,25 @@ const placeOrder = async (req, res) => {
   const newOrderDoc = Order.createDoc();
   const newOrderId = newOrderDoc.id;
   const newOrderIdentifier = generateIdentifier(5);
+  const newOrderType = sellerType === SellerType.ON_CAMPUS ? OrderType.ON_CAMPUS : OrderType.OFF_CAMPUS;
+
+  const newOrderSectionTitle = sectionDetail ? sectionDetail.title : null;
+  const newOrderSectionTitleZh = sectionDetail ? sectionDetail.title_zh : null;
 
   const newOrderDetail = {
+    title:                  userCart.title,
+    title_zh:               userCart.title_zh,
     user_id:                userId,
     seller_id:              sellerId,
+    seller_name:            sellerDetail.name,
+    seller_name_zh:         sellerDetail.name_zh,
     section_id:             sectionId,
+    section_title:          newOrderSectionTitle,
+    section_title_zh:       newOrderSectionTitleZh,
     deliverer_id:           null,
     identifier:             newOrderIdentifier,
-    type:                   sellerType,
+    image_url:              userCart.image_url,
+    type:                   newOrderType,
     order_items:            orderItems,
     state:                  ORDER_STATE_PROCESSING,
     is_paid:                true,
@@ -157,17 +174,19 @@ const placeOrder = async (req, res) => {
   // Clear the cart
   await CartItem.deleteAllForUser(userId);
 
+  // Generate order link
+  const dynamicLink = generateLongDynamicLink(
+    `https://foobar-group-delivery-app.web.app/order/${newOrderId}`
+  );
+
   return sendSuccessResponse(res, {
     order_id: newOrderId,
-    order_identifier: newOrderIdentifier
+    order_identifier: newOrderIdentifier,
+    link: dynamicLink
   });
 };
 
 const cancelOrder = async (req, res) => {
-  if (!validationResult(req).isEmpty()) {
-    return sendErrorResponse(res, 400, INVALID_REQUEST_PARAMS);
-  }
-
   const orderId = req.body.order_id;
 
   const orderDetail = await Order.getDetail(orderId);
@@ -191,21 +210,45 @@ const cancelOrder = async (req, res) => {
 };
 
 const updateOrderState = async (req, res) => {
-  if (!validationResult(req).isEmpty()) {
-    return sendErrorResponse(res, 400, INVALID_REQUEST_PARAMS);
+  const orderId = req.body.order_id;
+  const newOrderState = req.body.order_state;
+  const orderDetail = await Order.getDetail(orderId);
+
+  // On-campus order should not have IN_TRANSIT state
+  if (orderDetail.type === OrderType.ON_CAMPUS && newOrderState === OrderState.IN_TRANSIT) {
+    return sendErrorResponse(res, 403, UPDATE_ORDER_STATE_INVALID_STATE);
   }
 
-  const orderId = req.body.order_id;
-  const orderState = req.body.order_state;
-
   // Update order state
-  await Order.updateDetail(orderId, { state: orderState });
+  await Order.updateDetail(orderId, { state: newOrderState });
 
+  return sendSuccessResponse(res);
+};
+
+const updateOrderLocation = async (req, res) => {
+  const orderId = req.body.order_id;
+  const latitude = req.body.latitude;
+  const longitude = req.body.longitude;
+  const delivererId = req.currentUser.uid;
+
+  await OrderLocation.upsert(orderId, {
+    deliverer_id: delivererId,
+    current_location: new admin.firestore.GeoPoint(latitude, longitude)
+  });
+
+  return sendSuccessResponse(res);
+};
+
+const confirmOrderDelivered = async (req, res) => {
+  const orderId = req.body.order_id;
+  await Order.updateDetail(orderId, { state: OrderState.DELIVERED });
   return sendSuccessResponse(res);
 };
 
 module.exports = {
   placeOrder,
   cancelOrder,
-  updateOrderState
+  updateOrderState,
+  updateOrderLocation,
+  confirmOrderDelivered
 }

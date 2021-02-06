@@ -1,34 +1,33 @@
 const { admin } = require('../../config');
-const NotificationToken = require("../../models/NotificationToken");
+const DeviceToken = require("../../models/DeviceToken");
 
-module.exports = async function sendNotifications(tokens, message) {
-  // Construct notification payload
+module.exports = async function sendNotifications(tokens, notification, data) {
+  // No token provided
+  if (tokens.length === 0) {
+    return true;
+  }
+
   const payload = {
-    notification: {
-      title:          message.title,
-      body:           message.body,
-      icon:           message.icon_image_url,
-      click_action:   message.click_action
-    }
+    ...(notification) && { notification: notification },
+    ...(data) && { data: data }
   };
 
-  // Send to target devices
   const response = await admin.messaging().sendToDevice(tokens, payload);
 
-  console.log('Sent notifications.');
-
   // Remove invalid tokens
-  const removeJobs = [];
+  const removeTokenPromises = [];
+
   response.results.forEach((result, index) => {
     const error = result.error;
     if (error) {
       if (error.code === 'messaging/invalid-registration-token' ||
-          error.code === 'messaging/registration-token-not-registered'
-      ) {
-        removeJobs.push(NotificationToken.delete(tokens[index]));
+          error.code === 'messaging/registration-token-not-registered') {
+        removeTokenPromises.push(
+          DeviceToken.deleteBy('token', tokens[index])
+        );
       }
     }
   });
 
-  return await Promise.all(removeJobs);
+  return await Promise.all(removeTokenPromises);
 };

@@ -1,7 +1,7 @@
 const User = require("../../models/User");
 
 /**
- * Link 'users' collection with 'users_public' and 'users_delivery' collections.
+ * Link 'user' collection with 'users_public' and 'users_delivery' collections.
  * 1. Link deletion
  * 2. Link update
  */
@@ -20,12 +20,10 @@ module.exports = async function linkUsersPublicDeliveryTask(change, context) {
   // Update user documents
   return await Promise.all([
     User.createPublic(userId, {
-      id:         user.id,
       username:   user.username,
       photo_url:  user.photo_url
     }),
     User.createDelivery(userId, {
-      id:         user.id,
       name:       user.name,
       username:   user.username,
       photo_url:  user.photo_url,

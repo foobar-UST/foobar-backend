@@ -1,6 +1,6 @@
 /**
  * Generate an unique code for each order,
- * should be unique if not too many users placing order at the same time.
+ * should be unique if not too many user placing order at the same time.
  * @param length code length
  * @returns string result code
  */

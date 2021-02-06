@@ -10,6 +10,8 @@ module.exports = {
   USER_CARTS_COLLECTION:                  'user_carts',
   USER_CART_ITEMS_SUB_COLLECTION:         'cart_items',
 
+  DEVICE_TOKENS_COLLECTION:               'device_tokens',
+
   SUGGESTS_BASIC_COLLECTION:              'suggests_basic',
 
   SELLERS_COLLECTION:                     'sellers',
@@ -32,17 +34,19 @@ module.exports = {
   ORDERS_COLLECTION:                      'orders',
   ORDERS_BASIC_COLLECTION:                'orders_basic',
 
+  ORDER_LOCATIONS_COLLECTION:             'orders_location',
+
   ORDER_STATE_PROCESSING:                 'processing',
   ORDER_STATE_PREPARING:                  'preparing',
   ORDER_STATE_IN_TRANSIT:                 'in_transit',
   ORDER_STATE_READY_FOR_PICK_UP:          'ready_for_pickup',
   ORDER_STATE_DELIVERED:                  'delivered',
+  ORDER_STATE_ARCHIVED:                   'archived',
   ORDER_STATE_CANCELLED:                  'cancelled',
 
   PAYMENT_METHOD_COD:                     'cash_on_delivery',
 
   BROADCAST_MESSAGES_COLLECTION:          'broadcast_messages',
-  NOTIFICATION_TOKENS_COLLECTION:         'notification_tokens',
 
   USER_PHOTOS_FOLDER:                     'user_photos',
   SELLER_IMAGES_FOLDER:                   'seller_images',

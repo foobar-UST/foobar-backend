@@ -14,13 +14,29 @@ class Order {
     return document.exists ? document.data() : null;
   }
 
+  static async getOrderIdsBy(field, value) {
+    const snapshot = await db.collection(ORDERS_COLLECTION)
+      .where(field, '==', value)
+      .get();
+
+    if (snapshot.empty) {
+      return [];
+    }
+
+    const orderIds = [];
+    snapshot.forEach(doc => {
+      orderIds.push(doc.data().id);
+    });
+
+    return orderIds;
+  }
+
   static createDoc() {
     return db.collection(ORDERS_COLLECTION).doc();
   }
 
   static async createDetail(orderDoc, orderDetail) {
     //const docRef = db.collection(ORDERS_COLLECTION).doc();
-
     Object.assign(orderDetail, {
       id:             orderDoc.id,
       created_at:     admin.firestore.FieldValue.serverTimestamp(),
@@ -32,6 +48,7 @@ class Order {
 
   static async createBasic(orderId, orderBasic) {
     const docRef = db.doc(`${ORDERS_BASIC_COLLECTION}/${orderId}`);
+    Object.assign(orderBasic, { id: orderId });
     await docRef.set(orderBasic);
   }
 
@@ -47,6 +64,11 @@ class Order {
 
   static async deleteDetail(orderId) {
     const docRef = db.doc(`${ORDERS_COLLECTION}/${orderId}`);
+    await docRef.delete();
+  }
+
+  static async deleteBasic(orderId) {
+    const docRef = db.doc(`${ORDERS_BASIC_COLLECTION}/${orderId}`);
     await docRef.delete();
   }
 }

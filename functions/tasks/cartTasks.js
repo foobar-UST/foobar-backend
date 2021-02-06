@@ -1,4 +1,4 @@
-const functions = require('firebase-functions');
+const { functions } = require('../config');
 const { USERS_COLLECTION, USER_CART_ITEMS_SUB_COLLECTION } = require('../constants');
 const updateUserCartTask = require('./cart/updateUserCart');
 

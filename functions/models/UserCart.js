@@ -19,7 +19,7 @@ class UserCart {
 
     const userCarts = [];
     snapshot.forEach(doc => {
-      userCarts.push(doc.data().user_id)
+      userCarts.push(doc.data().user_id);
     });
 
     return userCarts;

@@ -46,9 +46,9 @@ service cloud.firestore {
       allow write: if false;
     }
     
-    // Make sure only cloud function can modify users_public collection.
+    // TODO: Make sure only cloud function can modify users_public collection.
     match /users_public/{userId} {
-    	allow read: if request.auth != null;
+    	allow read: if true;
       allow write: if false;
     }
     
@@ -126,6 +126,11 @@ service cloud.firestore {
 
     // TODO: 
     match /orders/{orderId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    match /orders_basic/{orderId} {
       allow read: if true;
       allow write: if true;
     }

@@ -3,16 +3,11 @@ const CartItem = require("../../models/CartItem");
 
 module.exports = async function sectionUpdateRequireCartSyncTask(change, context) {
   const sectionId = context.params.sectionId;
-  const prevSectionDetail = change.before.exists ? change.before.data() : null;
-  const newSectionDetail = change.after.exists ? change.after.data() : null;
-
-  // Return if the section is just being created.
-  if (!prevSectionDetail) {
-    return true;
-  }
+  const prevSectionDetail = change.before.data();
+  const newSectionDetail = change.after.data();
 
   // Clear user cart if the section is unavailable or deleted.
-  if (!newSectionDetail || !newSectionDetail.available) {
+  if (!newSectionDetail.available) {
     console.log('[SectionUpdateRequireCartSync]: Unavailable section. Clearing user carts.');
     const userIds = await UserCart.getUserIdsBy('section_id', sectionId);
     return await CartItem.deleteAllForUsers(userIds);
@@ -30,7 +25,7 @@ module.exports = async function sectionUpdateRequireCartSyncTask(change, context
     return true;
   }
 
-  // Get the ids of the users whose are having cart orders from the updated seller.
+  // Get the ids of the user whose are having cart orders from the updated seller.
   const userIds = await UserCart.getUserIdsBy('section_id', sectionId);
 
   // Return if no cart is associated with the current section.
@@ -39,9 +34,9 @@ module.exports = async function sectionUpdateRequireCartSyncTask(change, context
   }
 
   // Return a list of user ids without duplicates
-  const syncJobs = userIds.map(userId => {
+  const updateUserCartPromises = userIds.map(userId => {
     return UserCart.update(userId, { sync_required: true });
   });
 
-  return await Promise.all(syncJobs);
+  return await Promise.all(updateUserCartPromises);
 }

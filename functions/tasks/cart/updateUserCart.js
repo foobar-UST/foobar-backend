@@ -1,3 +1,4 @@
+const { admin } = require('../../config');
 const Seller = require("../../models/Seller");
 const UserCart = require("../../models/UserCart");
 const SellerSection = require("../../models/SellerSection");
@@ -31,7 +32,7 @@ module.exports = async function updateUserCartTask(change, context) {
     console.log('[UpdateUserCart]: full update.');
     const [sellerDetail, sectionDetail] = await Promise.all([
       Seller.getDetail(sellerId),
-      SellerSection.getDetail(sellerId, sectionId)
+      SellerSection.getDetail(sectionId)
     ]);
 
     // isOffCampusSection ?
@@ -40,18 +41,23 @@ module.exports = async function updateUserCartTask(change, context) {
       sellerDetail.name;
     const cartTitleZh       = sectionDetail ? sectionDetail.title_zh : sellerDetail.name_zh;
     const cartImageUrl      = sectionDetail ? sectionDetail.image_url : sellerDetail.image_url;
-    const sellerType        = sellerDetail.type;
     const pickupLocation    = sectionDetail ? sectionDetail.delivery_location : sellerDetail.location;
     const deliveryCost      = sectionDetail ? sectionDetail.delivery_cost : 0;
-    const deliveryTime      = sectionDetail ? sectionDetail.delivery_time : null;
+    const deliveryTime      = sectionDetail ? sectionDetail.delivery_time : admin.firestore.FieldValue.delete();
+    const sectionTitle      = sectionDetail ? sectionDetail.title : admin.firestore.FieldValue.delete();
+    const sectionTitleZh    = sectionDetail ? sectionDetail.title_zh : admin.firestore.FieldValue.delete();
 
     Object.assign(cartData, {
       user_id:              userId,
       title:                cartTitle,
       title_zh:             cartTitleZh,
       seller_id:            sellerId,
-      seller_type:          sellerType,
+      seller_name:          sellerDetail.name,
+      seller_name_zh:       sellerDetail.name_zh,
+      seller_type:          sellerDetail.type,
       section_id:           sectionId,
+      section_title:        sectionTitle,
+      section_title_zh:     sectionTitleZh,
       delivery_time:        deliveryTime,
       image_url:            cartImageUrl,
       pickup_location:      pickupLocation,

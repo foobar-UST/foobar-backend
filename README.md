@@ -97,7 +97,7 @@ None |
 ### Update User Profile
 Endpoint for updating user profile.  
 **URL**: /api/user  
-**Method**: POST
+**Method**: POST  
 **Auth required**: YES  
 #### Request
 body | type | description
@@ -107,14 +107,58 @@ phone_num | String? | (Optional) the phone number of the user
 
 ### Place Order
 Endpoint for placing a new order.  
-**URL**: /api/order
-**Method**: PUT
+**URL**: /api/order  
+**Method**: PUT  
 **Auth required**: YES  
 #### Request
 body | type | description
 ---------- | -------------- | --------------
 message | String? | (Optional) order notes for the seller
 payment_method | String | payment method identifier (must be the ones included in the database)
+
+### Cancel Order (User)
+Endpoint for cancelling an order.  
+**URL**: /api/order/cancel  
+**Method**: POST  
+**Auth required**: YES  
+#### Request
+body | type | description
+---------- | -------------- | --------------
+order_id | String | the id of the order
+
+### Update Order State (Seller)
+Endpoint for updating the order state.  
+**URL**: /api/order/update  
+**Method**: POST  
+**Auth required**: YES  
+#### Request
+body | type | description
+---------- | -------------- | --------------
+order_id | String | the id of the order
+order_state | String | the state of the order
+
+### Update Order Location (Deliverer)
+Endpoint for updating an order's current location.
+**URL**: /api/order/deliver/location  
+**Method**: POST  
+**Auth required**: YES
+#### Request
+body | type | description
+---------- | -------------- | --------------
+order_id | String | the id of the order
+latitude | Float | the latitude of the current location
+longitude | Float | the longitude of the current location
+
+### Confirm Order Delivered (Deliverer)
+Endpoint for confirming an order is delivered to the customer.
+**URL**: /api/order/deliver/confirm  
+**Method**: POST  
+**Auth required**: YES
+#### Request
+body | type | description
+---------- | -------------- | --------------
+order_id | String | the id of the order
+
 
 ## Functions
 Functions | Usages

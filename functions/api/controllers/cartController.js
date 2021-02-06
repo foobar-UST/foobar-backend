@@ -1,15 +1,14 @@
-const { INVALID_REQUEST_PARAMS } = require("../responses/ResponseMessage");
 const { ADD_USER_CART_ITEM_SOLD_OUT_ERROR } = require("../responses/ResponseMessage");
 const { ADD_USER_CART_ITEM_INVALID_SELLER_ERROR } = require("../responses/ResponseMessage");
 const { REDUCE_USER_CART_ITEM_NOT_FOUND } = require("../responses/ResponseMessage");
-const { validationResult } = require('express-validator');
 const CartItem = require("../../models/CartItem");
 const UserCart = require("../../models/UserCart");
 const SellerItem = require("../../models/SellerItem");
 const Seller = require("../../models/Seller");
 const SellerSection = require("../../models/SellerSection");
+const { SectionState } = require("../../models/SectionState");
 const { ADD_USER_CART_ITEM_INVALID_SECTION_ERROR } = require("../responses/ResponseMessage");
-const { ADD_USER_CART_NOT_RECENT_SECTION } = require("../responses/ResponseMessage");
+const { ADD_USER_CART_SECTION_UNAVAILABLE } = require("../responses/ResponseMessage");
 const { isSameDay } = require("../../utils/DateUtils");
 const { ADD_USER_CART_ITEM_SELLER_OFFLINE } = require("../responses/ResponseMessage");
 const { SYNC_USER_CART_UP_TO_DATE } = require("../responses/ResponseMessage");
@@ -18,17 +17,15 @@ const { sendErrorResponse } = require("../responses/sendResponse");
 const { admin } = require('../../config');
 
 const addUserCartItem = async (req, res) => {
-  if (!validationResult(req).isEmpty()) {
-    return sendErrorResponse(res, 400, INVALID_REQUEST_PARAMS);
-  }
-
   const userId          = req.currentUser.uid;
   const itemSectionId   = req.body.section_id;
   const itemId          = req.body.item_id;
   const amounts         = req.body.amounts;
 
-  const sellerDetail    = await Seller.getDetailHavingItem(itemId);
-  const sectionDetail   = itemSectionId ? await SellerSection.getDetail(sellerDetail.id, itemSectionId) : null;
+  const [sellerDetail, sectionDetail] = await Promise.all([
+    Seller.getDetailHavingItem(itemId),
+    SellerSection.getDetail(itemSectionId)
+  ]);
 
   const [itemDetail, userCart] = await Promise.all([
     SellerItem.getDetail(sellerDetail.id, itemId),
@@ -45,22 +42,23 @@ const addUserCartItem = async (req, res) => {
     return sendErrorResponse(res, 403, ADD_USER_CART_ITEM_INVALID_SELLER_ERROR);
   }
 
+  // Validate section cart item
   if (sectionDetail) {
-    const isRecentSection = sectionDetail.available &&
-      sectionDetail.state === 'available' &&
-      isSameDay(
-        admin.firestore.Timestamp.now().toDate(),
-        sectionDetail.delivery_time.toDate()
-      );
+    const timestampNow = admin.firestore.Timestamp.now();
+    const isSectionAvailable = sectionDetail.available &&
+      sectionDetail.state === SectionState.AVAILABLE &&
+      sectionDetail.cutoff_time > timestampNow &&
+      sectionDetail.delivery_time > timestampNow &&
+      isSameDay(timestampNow.toDate(), sectionDetail.delivery_time.toDate());
+
+    // Reject if the off-campus section is not ready.
+    if (!isSectionAvailable) {
+      return sendErrorResponse(res, 403, ADD_USER_CART_SECTION_UNAVAILABLE);
+    }
 
     // Reject if the user attempts to add a new cart item from a different section
     if (userCart && userCart.section_id && userCart.section_id !== itemSectionId) {
       return sendErrorResponse(res, 403, ADD_USER_CART_ITEM_INVALID_SECTION_ERROR);
-    }
-
-    // Reject if the off-campus section is not ready.
-    if (!isRecentSection) {
-      return sendErrorResponse(res, 403, ADD_USER_CART_NOT_RECENT_SECTION);
     }
   }
 
@@ -103,10 +101,6 @@ const addUserCartItem = async (req, res) => {
 };
 
 const updateUserCartItem = async (req, res) => {
-  if (!validationResult(req).isEmpty()) {
-    return sendErrorResponse(res, 400, INVALID_REQUEST_PARAMS);
-  }
-
   const userId      = req.currentUser.uid;
   const cartItemId  = req.body.cart_item_id;
   const newAmounts  = req.body.amounts;
@@ -177,7 +171,7 @@ const syncUserCart = async (req, res) => {
   // Sync user cart info, and reset 'sync_required'.
   const [sellerDetail, sectionDetail] = await Promise.all([
     Seller.getDetail(userCart.seller_id),
-    SellerSection.getDetail(userCart.seller_id, userCart.section_id)
+    SellerSection.getDetail(userCart.section_id)
   ]);
 
   const cartTitle = sectionDetail ? sectionDetail.title : sellerDetail.name;

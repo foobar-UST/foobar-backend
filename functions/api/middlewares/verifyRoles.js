@@ -1,16 +1,16 @@
 const User = require("../../models/User");
 const { VERIFY_ROLE_INVALID_ROLE } = require("../responses/ResponseMessage");
-const { AUTH_ERROR_DECODE } = require("../responses/ResponseMessage");
+const { VERIFY_ID_TOKEN_INVALID_TOKEN } = require("../responses/ResponseMessage");
 const { sendErrorResponse } = require("../responses/sendResponse");
 
 /**
  * Verify the role of the user, should use after webAuth.
- * Add req.userDetail which is the document data of 'users'.
+ * Add req.userDetail which is the document data of 'user'.
  */
-module.exports.verifyRoles = roles => {
+const verifyRoles = roles => {
   return async (req, res, next) => {
     if (!req.currentUser) {
-      return sendErrorResponse(res, 401, AUTH_ERROR_DECODE);
+      return sendErrorResponse(res, 401, VERIFY_ID_TOKEN_INVALID_TOKEN);
     }
 
     // Check if the user has the compulsory rule and any additional roles.
@@ -30,5 +30,7 @@ module.exports.verifyRoles = roles => {
     } else {
       return sendErrorResponse(res, 401, VERIFY_ROLE_INVALID_ROLE);
     }
-  }
+  };
 };
+
+module.exports = verifyRoles;

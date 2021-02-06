@@ -1,3 +1,4 @@
+const OrderState = require("./OrderState");
 const { SELLER_SECTION_STATE_DELIVERED } = require("../constants");
 const { SELLER_SECTION_STATE_SHIPPED } = require("../constants");
 const { SELLER_SECTION_STATE_PREPARING } = require("../constants");
@@ -12,4 +13,30 @@ const SectionState = Object.freeze({
   DELIVERED: SELLER_SECTION_STATE_DELIVERED
 });
 
-module.exports = SectionState;
+const toOrderState = sectionState => {
+  let orderState;
+  switch (sectionState) {
+    case SectionState.AVAILABLE: case SectionState.DELIVERED:
+      orderState = null;
+      break;
+
+    case SectionState.PROCESSING:
+      orderState = OrderState.PROCESSING;
+      break;
+
+    case SectionState.PREPARING:
+      orderState = OrderState.PREPARING;
+      break;
+
+    case SectionState.SHIPPED:
+      orderState = OrderState.IN_TRANSIT;
+      break;
+  }
+
+  return orderState;
+};
+
+module.exports = {
+  SectionState,
+  toOrderState
+};

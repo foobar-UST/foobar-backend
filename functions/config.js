@@ -1,5 +1,6 @@
 const admin = require('firebase-admin');
-const serviceAccount = require('./permissions.json');
+const serviceAccount = require('./serviceAccount.json');
+const firebase_functions = require('firebase-functions');
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
@@ -10,7 +11,11 @@ admin.initializeApp({
 const db = admin.firestore();
 db.settings({ ignoreUndefinedProperties: true });
 
+const functions = firebase_functions
+  .region('asia-east2');
+
 module.exports = { 
   admin, 
   db,
+  functions
 };

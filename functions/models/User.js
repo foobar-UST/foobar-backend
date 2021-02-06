@@ -19,7 +19,8 @@ class User {
     const docRef = db.doc(`${USERS_COLLECTION}/${userId}`);
 
     Object.assign(user, {
-      updated_at:  admin.firestore.FieldValue.serverTimestamp()
+      id:           userId,
+      updated_at:   admin.firestore.FieldValue.serverTimestamp()
     });
 
     await docRef.set(user);
@@ -42,6 +43,7 @@ class User {
 
   static async createPublic(userId, userPublic) {
     const docRef = db.doc(`${USERS_PUBLIC_COLLECTION}/${userId}`);
+    Object.assign(userPublic, { id: userId });
     await docRef.set(userPublic);
   }
 
@@ -52,6 +54,7 @@ class User {
 
   static async createDelivery(userId, userDelivery) {
     const docRef = db.doc(`${USERS_DELIVERY_COLLECTION}/${userId}`);
+    Object.assign(userDelivery, { id: userId });
     await docRef.set(userDelivery);
   }
 
