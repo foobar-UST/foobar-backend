@@ -5,7 +5,7 @@ Foobar++ is a group ordering and delivery application.
 See all the changes here [CHANGELOG.md](CHANGELOG.md).
 
 ## Endpoints
-https://us-central1-foobar-group-delivery-app.cloudfunctions.net
+https://asia-east2-foobar-group-delivery-app.cloudfunctions.net
 ### Authorization
 For all **Auth required** endpoints, insert the authorization header.
 
