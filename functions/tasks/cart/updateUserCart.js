@@ -1,20 +1,33 @@
-const { admin } = require('../../config');
 const Seller = require("../../models/Seller");
 const UserCart = require("../../models/UserCart");
 const SellerSection = require("../../models/SellerSection");
 const { get12HourString } = require("../../utils/DateUtils");
 const { getShortDateString } = require("../../utils/DateUtils");
 
+function getCartTitle(sellerDetail, sectionDetail) {
+  if (!sectionDetail) {
+    return sellerDetail.name;
+  } else {
+    const sectionDeliveryDate = getShortDateString(sectionDetail.delivery_time.toDate());
+    const sectionDeliveryTime = get12HourString(sectionDetail.delivery_time.toDate());
+    const sectionTitle = sectionDetail.title;
+
+    return `(${sectionDeliveryDate} @ ${sectionDeliveryTime}) ${sectionTitle}`;
+  }
+}
+
+function calculateSubtotal(itemsRemain) {
+  const itemsPrices = itemsRemain.map(cartItem => cartItem.total_price);
+  return itemsPrices.reduce((sum, total_price) => sum + total_price);
+}
+
 /**
  * Update 'user_carts' info when a cart item is modified in 'cart_items'.
  */
 module.exports = async function updateUserCartTask(change, context) {
-  const prevCartItem  = change.before.exists ? change.before.data() : null;
-  const newCartItem   = change.after.exists ? change.after.data() : null;
   const userId        = context.params.userId;
-  const cartData      = {};
 
-  // Get all remaining cart items
+  // Get all existing cart items
   const itemsSnapshot     = await change.after.ref.parent.get();
   const itemsRemain       = itemsSnapshot.docs.map(doc => doc.data());
   const itemsRemainCount  = itemsRemain.length;
@@ -27,62 +40,41 @@ module.exports = async function updateUserCartTask(change, context) {
   const sellerId          = itemsRemain[0].item_seller_id;
   const sectionId         = itemsRemain[0].item_section_id;
 
-  if (!prevCartItem && itemsRemainCount === 1) {
-    // Fields to update when the first item is inserted in cart.
-    console.log('[UpdateUserCart]: full update.');
-    const [sellerDetail, sectionDetail] = await Promise.all([
-      Seller.getDetail(sellerId),
-      SellerSection.getDetail(sectionId)
-    ]);
+  const [sellerDetail, sectionDetail] = await Promise.all([
+    Seller.getDetail(sellerId),
+    SellerSection.getDetail(sectionId)
+  ]);
 
-    // isOffCampusSection ?
-    const cartTitle         = sectionDetail ?
-      `(${getShortDateString(sectionDetail.delivery_time.toDate())} @ ${get12HourString(sectionDetail.delivery_time.toDate())}) ${sectionDetail.title}` :
-      sellerDetail.name;
-    const cartTitleZh       = sectionDetail ? sectionDetail.title_zh : sellerDetail.name_zh;
-    const cartImageUrl      = sectionDetail ? sectionDetail.image_url : sellerDetail.image_url;
-    const pickupLocation    = sectionDetail ? sectionDetail.delivery_location : sellerDetail.location;
-    const deliveryCost      = sectionDetail ? sectionDetail.delivery_cost : 0;
-    const deliveryTime      = sectionDetail ? sectionDetail.delivery_time : admin.firestore.FieldValue.delete();
-    const sectionTitle      = sectionDetail ? sectionDetail.title : admin.firestore.FieldValue.delete();
-    const sectionTitleZh    = sectionDetail ? sectionDetail.title_zh : admin.firestore.FieldValue.delete();
+  const cartTitle         = getCartTitle(sellerDetail, sectionDetail);
+  const cartTitleZh       = sectionDetail ? sectionDetail.title_zh : sellerDetail.name_zh;
+  const cartImageUrl      = sectionDetail ? sectionDetail.image_url : sellerDetail.image_url;
+  const pickupLocation    = sectionDetail ? sectionDetail.delivery_location : sellerDetail.location;
+  const deliveryTime      = sectionDetail ? sectionDetail.delivery_time : null;
+  const sectionTitle      = sectionDetail ? sectionDetail.title : null;
+  const sectionTitleZh    = sectionDetail ? sectionDetail.title_zh : null;
 
-    Object.assign(cartData, {
-      user_id:              userId,
-      title:                cartTitle,
-      title_zh:             cartTitleZh,
-      seller_id:            sellerId,
-      seller_name:          sellerDetail.name,
-      seller_name_zh:       sellerDetail.name_zh,
-      seller_type:          sellerDetail.type,
-      section_id:           sectionId,
-      section_title:        sectionTitle,
-      section_title_zh:     sectionTitleZh,
-      delivery_time:        deliveryTime,
-      image_url:            cartImageUrl,
-      pickup_location:      pickupLocation,
-      delivery_cost:        deliveryCost,
-    });
-  } else {
-    // Fields to update when there are existing items in cart.
-    console.log('[UpdateUserCart]: cost update.');
-    const userCart          = await UserCart.get(userId);
-    const deliveryCost      = userCart.delivery_cost;
+  // Order costs
+  const subtotalCost      = calculateSubtotal(itemsRemain);
+  const deliveryCost      = sectionDetail ? sectionDetail.delivery_cost : 0;
+  const totalCost         = deliveryCost + subtotalCost;
 
-    Object.assign(cartData, {
-      delivery_cost:        deliveryCost
-    });
-  }
-
-  const itemsPrices       = itemsRemain.map(cartItem => cartItem.total_price);
-  const subtotalCost      = itemsPrices.reduce((sum, total_price) => sum + total_price);
-  const totalCost         = cartData.delivery_cost + subtotalCost;
-
-  Object.assign(cartData, {
+  return await UserCart.upsert(userId, {
+    user_id:              userId,
+    title:                cartTitle,
+    title_zh:             cartTitleZh,
+    seller_id:            sellerId,
+    seller_name:          sellerDetail.name,
+    seller_name_zh:       sellerDetail.name_zh,
+    seller_type:          sellerDetail.type,
+    section_id:           sectionId,
+    section_title:        sectionTitle,
+    section_title_zh:     sectionTitleZh,
+    delivery_time:        deliveryTime,
+    image_url:            cartImageUrl,
+    pickup_location:      pickupLocation,
     items_count:          itemsRemainCount,
+    delivery_cost:        deliveryCost,
     subtotal_cost:        subtotalCost,
     total_cost:           totalCost
   });
-
-  return await UserCart.upsert(userId, cartData);
 }

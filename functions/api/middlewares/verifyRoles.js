@@ -13,16 +13,15 @@ const verifyRoles = roles => {
       return sendErrorResponse(res, 401, VERIFY_ID_TOKEN_INVALID_TOKEN);
     }
 
-    // Check if the user has the compulsory rule and any additional roles.
-    const userId      = req.currentUser.uid;
-    const userDetail  = await User.getUserDetail(userId);
-    const userRoles   = userDetail.roles;
+    const userId = req.currentUser.uid;
+    const userDetail = await User.getUserDetail(userId);
+    const userRoles = userDetail.roles;
 
     if (!userDetail || !userDetail.roles || userDetail.roles.length === 0) {
       return sendErrorResponse(res, 401, VERIFY_ROLE_INVALID_ROLE);
     }
 
-    const fulfilled   = roles.every(role => userRoles.includes(role));
+    const fulfilled = roles.every(role => userRoles.includes(role));
 
     if (fulfilled) {
       req.userDetail = userDetail;

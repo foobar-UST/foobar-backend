@@ -26,9 +26,10 @@ module.exports = {
   ORDER_ADD_NEW_ORDER_UNAVAILABLE_ITEM:                 'Cart contains unavailable items.',
   ORDER_ADD_NEW_ORDER_SELLER_OFFLINE:                   'Seller is offline.',
   ORDER_ADD_NEW_ORDER_SECTION_UNAVAILABLE:              'Section is unavailable.',
+  ORDER_ADD_NEW_ORDER_SECTION_FULL:                     'Section is full.',
 
   ORDER_CANCEL_ORDER_SELLER_OFFLINE:                    'Seller is offline.',
-  ORDER_CANCEL_ORDER_NOT_PROCESSING:                    'Failed to cancel order.',
+  ORDER_CANCEL_ORDER_INVALID_STATE:                     'Failed to cancel order.',
 
   UPDATE_ORDER_STATE_INVALID_STATE:                     'Invalid order state.'
 };

@@ -3,9 +3,11 @@ module.exports = {
   USERS_DELIVERY_COLLECTION:              'users_delivery',
   USERS_PUBLIC_COLLECTION:                'users_public',
 
+  USER_NOTIFICATIONS_SUB_COLLECTION:      'notifications',
+
   USER_ROLES_USER:                        'user',
-  USER_ROLES_DELIVERER:                   'deliverer',
   USER_ROLES_SELLER:                      'seller',
+  USER_ROLES_DELIVERER:                   'deliverer',
 
   USER_CARTS_COLLECTION:                  'user_carts',
   USER_CART_ITEMS_SUB_COLLECTION:         'cart_items',
@@ -39,7 +41,7 @@ module.exports = {
   ORDER_STATE_PROCESSING:                 'processing',
   ORDER_STATE_PREPARING:                  'preparing',
   ORDER_STATE_IN_TRANSIT:                 'in_transit',
-  ORDER_STATE_READY_FOR_PICK_UP:          'ready_for_pickup',
+  ORDER_STATE_READY_FOR_PICK_UP:          'ready_for_pick_up',
   ORDER_STATE_DELIVERED:                  'delivered',
   ORDER_STATE_ARCHIVED:                   'archived',
   ORDER_STATE_CANCELLED:                  'cancelled',

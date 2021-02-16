@@ -1,14 +1,14 @@
 const express = require('express');
 const router = express.Router();
-const { USER_ROLES_USER } = require("../../constants");
 const userController = require('../controllers/userController');
 const validate = require("../validator/validate");
 const verifyRoles = require("../middlewares/verifyRoles");
 const verifyIdToken = require("../middlewares/verifyIdToken");
+const UserRole = require("../../models/UserRole");
 const { updateUserDetailValidationRules } = require("../validator/userValidators");
 
 router.use(verifyIdToken);
-router.use(verifyRoles([USER_ROLES_USER]));
+router.use(verifyRoles([UserRole.USER]));
 
 // Update user detail
 router.post('/',

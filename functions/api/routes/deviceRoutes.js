@@ -5,7 +5,7 @@ const validate = require("../validator/validate");
 const verifyFCMToken = require("../middlewares/verifyFCMToken");
 const verifyIdToken = require("../middlewares/verifyIdToken");
 const verifyRoles = require("../middlewares/verifyRoles");
-const { USER_ROLES_USER } = require("../../constants");
+const UserRole = require("../../models/UserRole");
 const {
   insertDeviceTokenValidationRules,
   linkDeviceTokenValidationRules,
@@ -22,7 +22,7 @@ router.put('/add',
 router.post('/link',
   linkDeviceTokenValidationRules(), validate,
   verifyIdToken,
-  verifyRoles([USER_ROLES_USER]),
+  verifyRoles([UserRole.USER]),
   verifyFCMToken,
   deviceController.linkDeviceTokenToUser
 );

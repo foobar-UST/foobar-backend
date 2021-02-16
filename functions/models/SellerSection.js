@@ -1,29 +1,18 @@
-const { SectionState } = require("./SectionState");
-const { isSameDay } = require("../utils/DateUtils");
+const { db, admin } = require('../config');
 const { SELLER_SECTIONS_SUB_COLLECTION } = require("../constants");
 const { SELLER_SECTIONS_BASIC_SUB_COLLECTION } = require("../constants");
 const { SELLERS_COLLECTION } = require("../constants");
-const { db, admin } = require('../config');
 
 class SellerSection {
 
-  /*
-  static async getDetail(sellerId, sectionId) {
-    const document = await db.doc(
-      `${SELLERS_COLLECTION}/${sellerId}/${SELLER_SECTIONS_SUB_COLLECTION}/${sectionId}`
-    ).get();
-    return document.exists ? document.data() : null;
-  }
-
-   */
-
   static async getDetail(sectionId) {
     if (!sectionId) return null
-    const snapshot = await db.collectionGroup(SELLER_SECTIONS_SUB_COLLECTION)
+
+    const querySnapshot = await db.collectionGroup(SELLER_SECTIONS_SUB_COLLECTION)
       .where('id', '==', sectionId)
       .get();
 
-    const document = snapshot.empty ? null : snapshot.docs[0];
+    const document = querySnapshot.empty ? null : querySnapshot.docs[0];
 
     return document.exists ? document.data() : null;
   }
@@ -32,7 +21,9 @@ class SellerSection {
     const docRef = db.doc(
       `${SELLERS_COLLECTION}/${sellerId}/${SELLER_SECTIONS_BASIC_SUB_COLLECTION}/${sectionId}`
     );
+
     Object.assign(sectionBasic, { id: sectionId });
+
     await docRef.set(sectionBasic);
   }
 
@@ -40,7 +31,24 @@ class SellerSection {
     const docRef = db.doc(
       `${SELLERS_COLLECTION}/${sellerId}/${SELLER_SECTIONS_BASIC_SUB_COLLECTION}/${sectionId}`
     );
+
     await docRef.delete();
+  }
+
+  static async updateDetail(sectionId, data) {
+    if (!sectionId) return
+
+    const querySnapshot = await db.collectionGroup(SELLER_SECTIONS_SUB_COLLECTION)
+      .where('id', '==', sectionId)
+      .get();
+
+    const docRef = querySnapshot.empty ? null : querySnapshot.docs[0].ref;
+
+    Object.assign(data, {
+      updated_at: admin.firestore.FieldValue.serverTimestamp()
+    });
+
+    await docRef.update(data);
   }
 }
 

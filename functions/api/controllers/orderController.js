@@ -10,18 +10,19 @@ const OrderState = require("../../models/OrderState");
 const SellerType = require("../../models/SellerType");
 const OrderType = require("../../models/OrderType");
 const OrderLocation = require("../../models/OrderLocation");
+const UserRole = require("../../models/UserRole");
+const { ORDER_ADD_NEW_ORDER_SECTION_FULL } = require("../responses/ResponseMessage");
 const { generateLongDynamicLink } = require("../../tasks/utils/generateDynamicLink");
 const { isSameDay } = require("../../utils/DateUtils");
 const { UPDATE_ORDER_STATE_INVALID_STATE } = require("../responses/ResponseMessage");
 const { ORDER_CANCEL_ORDER_SELLER_OFFLINE } = require("../responses/ResponseMessage");
-const { ORDER_CANCEL_ORDER_NOT_PROCESSING } = require("../responses/ResponseMessage");
+const { ORDER_CANCEL_ORDER_INVALID_STATE } = require("../responses/ResponseMessage");
 const { sendSuccessResponse } = require("../responses/sendResponse");
 const { admin } = require("../../config");
 const { ORDER_STATE_PROCESSING } = require("../../constants");
 const { sendErrorResponse } = require("../responses/sendResponse");
 const { v4: uuidv4 } = require('uuid');
 const { ORDER_ADD_NEW_ORDER_PROFILE_NOT_COMPLETED } = require("../responses/ResponseMessage");
-const { USER_ROLES_USER } = require("../../constants");
 const { ORDER_ADD_NEW_ORDER_SECTION_UNAVAILABLE } = require("../responses/ResponseMessage");
 const { ORDER_ADD_NEW_ORDER_SELLER_OFFLINE } = require("../responses/ResponseMessage");
 const { ORDER_ADD_NEW_ORDER_UNAVAILABLE_ITEM } = require("../responses/ResponseMessage");
@@ -50,7 +51,7 @@ const placeOrder = async (req, res) => {
   const sectionDetail = await SellerSection.getDetail(sectionId);
 
   // Ensure the user has filled in his profile
-  if (!userDetail.roles.includes(USER_ROLES_USER) || !userDetail.name || !userDetail.phone_num) {
+  if (!userDetail.roles.includes(UserRole.USER) || !userDetail.name || !userDetail.phone_num) {
     return sendErrorResponse(res, 403, ORDER_ADD_NEW_ORDER_PROFILE_NOT_COMPLETED);
   }
 
@@ -111,6 +112,11 @@ const placeOrder = async (req, res) => {
     if (!isSectionAvailable) {
       return sendErrorResponse(res, 403, ORDER_ADD_NEW_ORDER_SECTION_UNAVAILABLE);
     }
+
+    // Ensure the section is not full yet.
+    if (sectionDetail.joined_users_count >= sectionDetail.max_users) {
+      return sendErrorResponse(res, 403, ORDER_ADD_NEW_ORDER_SECTION_FULL);
+    }
   }
 
   // Collect all order items
@@ -125,7 +131,7 @@ const placeOrder = async (req, res) => {
       item_image_url:       cartItem.image_url,
       amounts:              cartItem.amounts,
       total_price:          cartItem.total_price
-    }
+    };
   });
 
   // Create a new order
@@ -188,6 +194,7 @@ const placeOrder = async (req, res) => {
 
 const cancelOrder = async (req, res) => {
   const orderId = req.body.order_id;
+  const userDetail = req.userDetail;
 
   const orderDetail = await Order.getDetail(orderId);
   const sellerDetail = await Seller.getDetail(orderDetail.seller_id);
@@ -197,10 +204,23 @@ const cancelOrder = async (req, res) => {
     return sendErrorResponse(res, 403, ORDER_CANCEL_ORDER_SELLER_OFFLINE);
   }
 
-  // Check the current order state.
-  // User can only can cancel order during 'processing' state.
-  if (orderDetail.state !== OrderState.PROCESSING) {
-    return sendErrorResponse(res, 403, ORDER_CANCEL_ORDER_NOT_PROCESSING);
+  // Check if the order is already cancelled.
+  if (orderDetail.state === OrderState.CANCELLED) {
+    return sendErrorResponse(res, 403, ORDER_CANCEL_ORDER_INVALID_STATE);
+  }
+
+  // Seller can cancel order before archived state.
+  if (userDetail.roles.includes(UserRole.SELLER)) {
+    if (orderDetail.state === OrderState.ARCHIVED) {
+      return sendErrorResponse(res, 403, ORDER_CANCEL_ORDER_INVALID_STATE);
+    }
+  }
+
+  // User can only cancel order during processing state.
+  if (userDetail.roles.includes(UserRole.USER)) {
+    if (orderDetail.state !== OrderState.PROCESSING) {
+      return sendErrorResponse(res, 403, ORDER_CANCEL_ORDER_INVALID_STATE);
+    }
   }
 
   // Set order state to cancelled

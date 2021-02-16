@@ -33,24 +33,6 @@ Authorization | string | use getIdToken() from Auth SDK
 }
 ```
 
-
-
-### Hello World
-Endpoint for testing get request.  
-**URL**: /api/test/hello-world  
-**Method**: GET  
-**Auth required**: NO  
-
-#### Request
-query | type | description
----------- | -------------- | --------------
-has_error | boolean | Decide whether to receive a error response
-
-#### Response
-fields | type | description
----------- | -------------- | --------------
-result | string | A text response showing 'Success! Hello World!'
-
 ### Add Cart Item
 Endpoint for adding cart item for a user.  
 **URL**: /api/cart  

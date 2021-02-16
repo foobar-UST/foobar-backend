@@ -38,6 +38,10 @@ service cloud.firestore {
     		allow read: if request.auth.uid == userId;
         allow write: if true;
     	}
+
+      match /notifications/{notificationId} {
+        allow read, write: if request.auth.uid == userId;
+      }
     }
     
     // Make sure only cloud function can modify users_delivery collection.
