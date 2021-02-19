@@ -56,7 +56,7 @@ class Order {
     const docRef = db.doc(`${ORDERS_COLLECTION}/${orderId}`);
 
     Object.assign(data, {
-      updated_at:      admin.firestore.FieldValue.serverTimestamp()
+      updated_at: admin.firestore.FieldValue.serverTimestamp()
     });
 
     await docRef.update(data);

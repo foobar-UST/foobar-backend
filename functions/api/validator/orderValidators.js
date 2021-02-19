@@ -1,4 +1,4 @@
-const { SectionState } = require("../../models/SectionState");
+const OrderState = require("../../models/OrderState");
 const { PAYMENT_METHOD_COD } = require("../../constants");
 const { body } = require('express-validator');
 
@@ -18,7 +18,7 @@ const cancelOrderValidationRules = () => {
 const updateOrderStateValidationRules = () => {
   return [
     body('order_id').exists().isString(),
-    body('order_state').exists().isIn(Object.values(SectionState))
+    body('order_state').exists().isIn(Object.values(OrderState))
   ];
 }
 

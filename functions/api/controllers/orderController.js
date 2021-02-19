@@ -232,6 +232,7 @@ const cancelOrder = async (req, res) => {
 const updateOrderState = async (req, res) => {
   const orderId = req.body.order_id;
   const newOrderState = req.body.order_state;
+
   const orderDetail = await Order.getDetail(orderId);
 
   // On-campus order should not have IN_TRANSIT state

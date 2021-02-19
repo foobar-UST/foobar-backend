@@ -33,8 +33,6 @@ const generateShortDynamicLink = async deepLink => {
       }
     );
 
-    console.log(response.data.shortLink);
-
     return response.data.shortLink;
   } catch (e) {
     console.log(e);

@@ -98,7 +98,7 @@ body | type | description
 message | String? | (Optional) order notes for the seller
 payment_method | String | payment method identifier (must be the ones included in the database)
 
-### Cancel Order (User)
+### Cancel Order (User/Seller)
 Endpoint for cancelling an order.  
 **URL**: /api/order/cancel  
 **Method**: POST  
@@ -120,10 +120,10 @@ order_id | String | the id of the order
 order_state | String | the state of the order
 
 ### Update Order Location (Deliverer)
-Endpoint for updating an order's current location.
+Endpoint for updating an order's current location.   
 **URL**: /api/order/deliver/location  
 **Method**: POST  
-**Auth required**: YES
+**Auth required**: YES   
 #### Request
 body | type | description
 ---------- | -------------- | --------------
@@ -135,7 +135,7 @@ longitude | Float | the longitude of the current location
 Endpoint for confirming an order is delivered to the customer.
 **URL**: /api/order/deliver/confirm  
 **Method**: POST  
-**Auth required**: YES
+**Auth required**: YES   
 #### Request
 body | type | description
 ---------- | -------------- | --------------
