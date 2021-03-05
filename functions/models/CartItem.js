@@ -1,7 +1,6 @@
-const deleteCollection = require("../utils/deleteCollection");
 const { db, admin } = require('../config');
-const { USER_CART_ITEMS_SUB_COLLECTION } = require("../constants");
-const { USERS_COLLECTION } = require("../constants");
+const deleteCollection = require("../utils/deleteCollection");
+const { USERS_COLLECTION, USER_CART_ITEMS_SUB_COLLECTION } = require("../constants");
 
 class CartItem {
 

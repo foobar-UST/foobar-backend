@@ -1,34 +1,38 @@
+const { admin } = require("../../config");
 const CartItem = require("../../models/CartItem");
 const UserCart = require("../../models/UserCart");
 const Seller = require("../../models/Seller");
 const SellerSection = require("../../models/SellerSection");
 const SellerItem = require("../../models/SellerItem");
-const generateIdentifier = require("../../utils/generateIdentifier");
 const Order = require("../../models/Order");
 const { SectionState } = require("../../models/SectionState");
 const OrderState = require("../../models/OrderState");
 const SellerType = require("../../models/SellerType");
 const OrderType = require("../../models/OrderType");
-const OrderLocation = require("../../models/OrderLocation");
 const UserRole = require("../../models/UserRole");
-const { ORDER_ADD_NEW_ORDER_SECTION_FULL } = require("../responses/ResponseMessage");
-const { generateLongDynamicLink } = require("../../tasks/utils/generateDynamicLink");
-const { isSameDay } = require("../../utils/DateUtils");
-const { UPDATE_ORDER_STATE_INVALID_STATE } = require("../responses/ResponseMessage");
-const { ORDER_CANCEL_ORDER_SELLER_OFFLINE } = require("../responses/ResponseMessage");
-const { ORDER_CANCEL_ORDER_INVALID_STATE } = require("../responses/ResponseMessage");
-const { sendSuccessResponse } = require("../responses/sendResponse");
-const { admin } = require("../../config");
-const { ORDER_STATE_PROCESSING } = require("../../constants");
-const { sendErrorResponse } = require("../responses/sendResponse");
+const OrderLocation = require("../../models/OrderLocation");
+const generateIdentifier = require("../../utils/generateIdentifier");
+const Rating = require("../../models/Rating");
 const { v4: uuidv4 } = require('uuid');
-const { ORDER_ADD_NEW_ORDER_PROFILE_NOT_COMPLETED } = require("../responses/ResponseMessage");
-const { ORDER_ADD_NEW_ORDER_SECTION_UNAVAILABLE } = require("../responses/ResponseMessage");
-const { ORDER_ADD_NEW_ORDER_SELLER_OFFLINE } = require("../responses/ResponseMessage");
-const { ORDER_ADD_NEW_ORDER_UNAVAILABLE_ITEM } = require("../responses/ResponseMessage");
-const { ORDER_ADD_NEW_ORDER_LESS_THAN_MIN_SPEND } = require("../responses/ResponseMessage");
-const { ORDER_ADD_NEW_ORDER_NO_CART_ITEM } = require("../responses/ResponseMessage");
-const { ORDER_ADD_NEW_ORDER_CART_NEED_SYNC } = require("../responses/ResponseMessage");
+const { generateLongDynamicLink } = require("../../utils/generateDynamicLink");
+const { isSameDay } = require("../../utils/DateUtils");
+const { sendSuccessResponse } = require("../responses/sendResponse");
+const { sendErrorResponse } = require("../responses/sendResponse");
+const { RATE_ORDER_INVALID_RATING,
+  ORDER_ADD_NEW_ORDER_SECTION_FULL,
+  ORDER_ADD_NEW_ORDER_PROFILE_NOT_COMPLETED,
+  ORDER_ADD_NEW_ORDER_SECTION_UNAVAILABLE,
+  ORDER_ADD_NEW_ORDER_SELLER_OFFLINE,
+  ORDER_ADD_NEW_ORDER_UNAVAILABLE_ITEM,
+  ORDER_ADD_NEW_ORDER_LESS_THAN_MIN_SPEND,
+  ORDER_ADD_NEW_ORDER_NO_CART_ITEM,
+  ORDER_ADD_NEW_ORDER_CART_NEED_SYNC,
+  UPDATE_ORDER_STATE_INVALID_STATE,
+  ORDER_CANCEL_ORDER_SELLER_OFFLINE,
+  ORDER_CANCEL_ORDER_INVALID_STATE,
+  RATE_ORDER_INVALID_ORDER_STATE,
+  RATE_ORDER_INVALID_USER
+} = require("../responses/ResponseMessage");
 
 const placeOrder = async (req, res) => {
   const userId = req.currentUser.uid;
@@ -158,7 +162,8 @@ const placeOrder = async (req, res) => {
     image_url:              userCart.image_url,
     type:                   newOrderType,
     order_items:            orderItems,
-    state:                  ORDER_STATE_PROCESSING,
+    order_items_count:      orderItems.length,
+    state:                  OrderState.PROCESSING,
     is_paid:                true,
     payment_method:         paymentMethod,
     message:                message,
@@ -262,7 +267,55 @@ const updateOrderLocation = async (req, res) => {
 
 const confirmOrderDelivered = async (req, res) => {
   const orderId = req.body.order_id;
+
   await Order.updateDetail(orderId, { state: OrderState.DELIVERED });
+
+  return sendSuccessResponse(res);
+};
+
+const rateOrder = async (req, res) => {
+  const userId = req.currentUser.uid;
+  const userDetail = req.userDetail;
+
+  const orderId = req.body.order_id;
+  const orderRating = req.body.order_rating;
+  const deliveryRating = req.body.delivery_rating;
+
+  // Find the seller id of the order
+  const orderDetail = await Order.getDetail(orderId);
+  const sellerId = orderDetail.seller_id;
+
+  // Check if the rating is submitted by the order owner
+  if (orderDetail.user_id !== userId) {
+    return sendErrorResponse(res, 403, RATE_ORDER_INVALID_USER);
+  }
+
+  // Check if the order is in delivered state
+  if (orderDetail.state !== OrderState.DELIVERED) {
+    return sendErrorResponse(res, 403, RATE_ORDER_INVALID_ORDER_STATE);
+  }
+
+  // Cannot add delivery rating for on-campus order
+  if (orderDetail.type === OrderType.ON_CAMPUS && deliveryRating) {
+    return sendErrorResponse(res, 403, RATE_ORDER_INVALID_RATING);
+  }
+
+  // Set to archived state
+  const ratingPromises = [
+    Rating.createDetail(sellerId, {
+      username: userDetail.username,
+      user_photo_url: userDetail.photo_url,
+      order_id: orderId,
+      order_rating: orderRating,
+      delivery_rating: deliveryRating
+    }),
+    Order.updateDetail(orderId, {
+      state: OrderState.ARCHIVED
+    })
+  ];
+
+  await Promise.all(ratingPromises);
+
   return sendSuccessResponse(res);
 };
 
@@ -271,5 +324,6 @@ module.exports = {
   cancelOrder,
   updateOrderState,
   updateOrderLocation,
-  confirmOrderDelivered
+  confirmOrderDelivered,
+  rateOrder
 }

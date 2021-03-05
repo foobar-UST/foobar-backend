@@ -3,8 +3,6 @@ module.exports = {
   USERS_DELIVERY_COLLECTION:              'users_delivery',
   USERS_PUBLIC_COLLECTION:                'users_public',
 
-  USER_NOTIFICATIONS_SUB_COLLECTION:      'notifications',
-
   USER_ROLES_USER:                        'user',
   USER_ROLES_SELLER:                      'seller',
   USER_ROLES_DELIVERER:                   'deliverer',
@@ -26,6 +24,12 @@ module.exports = {
 
   SELLER_SECTIONS_SUB_COLLECTION:         'sections',
   SELLER_SECTIONS_BASIC_SUB_COLLECTION:   'sections_basic',
+
+  SELLER_ADVERTISES_SUB_COLLECTION:       'advertises',
+  ADVERTISES_BASIC_COLLECTION:            'advertises_basic',
+
+  SELLER_RATINGS_SUB_COLLECTION:          'ratings',
+  SELLER_RATINGS_BASIC_SUB_COLLECTION:    'ratings_basic',
 
   SELLER_SECTION_STATE_AVAILABLE:         'available',
   SELLER_SECTION_STATE_PROCESSING:        'processing',
@@ -50,7 +54,12 @@ module.exports = {
 
   BROADCAST_MESSAGES_COLLECTION:          'broadcast_messages',
 
+  ITEM_CATEGORIES_COLLECTION:             'item_categories',
+
+  // Storage folders
   USER_PHOTOS_FOLDER:                     'user_photos',
   SELLER_IMAGES_FOLDER:                   'seller_images',
-  ITEM_IMAGES_FOLDER:                     'item_images'
+  ITEM_IMAGES_FOLDER:                     'item_images',
+  ADVERTISE_IMAGES_FOLDER:                'advertise_images',
+  ITEM_CATEGORIES_IMAGES_FOLDER:          'item_categories_images'
 };

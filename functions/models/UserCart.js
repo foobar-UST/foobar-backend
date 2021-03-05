@@ -45,7 +45,7 @@ class UserCart {
     await docRef.set(data, { merge: true });
   }
 
-  static async delete(userId) {
+  static async deleteFor(userId) {
     const docRef = db.doc(`${USER_CARTS_COLLECTION}/${userId}`);
     await docRef.delete();
   }

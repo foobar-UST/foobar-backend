@@ -1,12 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const cartController = require('../controllers/cartController');
+const UserRole = require('../../models/UserRole');
 const validateResult = require("../middlewares/validateResult");
-const verifyRoles = require("../middlewares/verifyRoles");
-const verifyIdToken = require("../middlewares/verifyIdToken");
-const UserRole = require("../../models/UserRole");
-const { updateUserCartItemValidationRules } = require("../validator/cartValidators");
-const { addUserCartItemValidationRules } = require("../validator/cartValidators");
+const verifyRoles = require('../middlewares/verifyRoles');
+const verifyIdToken = require('../middlewares/verifyIdToken');
+const { updateUserCartItemValidationRules, addUserCartItemValidationRules } = require('../validator/cartValidators');
 
 router.use(verifyIdToken);
 router.use(verifyRoles([UserRole.USER]));

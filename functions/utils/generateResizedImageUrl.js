@@ -1,4 +1,4 @@
-const { admin } = require('../../config');
+const { admin } = require('../config');
 const { tmpdir } = require('os');
 const { basename, dirname, join } = require('path');
 const { v4: uuidv4 } = require('uuid');

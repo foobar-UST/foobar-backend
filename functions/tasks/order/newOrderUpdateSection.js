@@ -4,7 +4,6 @@ const SellerSection = require("../../models/SellerSection");
 const OrderState = require("../../models/OrderState");
 
 module.exports = async function newOrderUpdateSectionTask(change, context) {
-  const orderId = context.params.orderId;
   const prevOrderDetail = change.before.exists ? change.before.data() : null;
   const newOrderDetail = change.after.exists ? change.after.data() : null;
 

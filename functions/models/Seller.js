@@ -1,7 +1,8 @@
-const { SELLER_ITEMS_SUB_COLLECTION } = require("../constants");
 const { db, admin } = require('../config');
-const { SELLERS_BASIC_COLLECTION } = require("../constants");
-const { SELLERS_COLLECTION } = require("../constants");
+const searchCollection = require("../utils/searchCollection");
+const { SELLER_ITEMS_SUB_COLLECTION,
+  SELLERS_BASIC_COLLECTION,
+  SELLERS_COLLECTION } = require("../constants");
 
 class Seller {
 
@@ -10,17 +11,25 @@ class Seller {
     return document.exists ? document.data() : null;
   }
 
+  static async getDetailBy(field, value) {
+    const querySnapshot = await db.collection(SELLERS_COLLECTION)
+      .where(field, '==', value)
+      .get();
+
+    return querySnapshot.empty ? null : querySnapshot.docs[0].data();
+  }
+
   static async getBasic(sellerId) {
     const document = await db.doc(`${SELLERS_BASIC_COLLECTION}/${sellerId}`).get();
     return document.exists ? document.data() : null;
   }
 
   static async getDetailHavingItem(itemId) {
-    const snapshot = await db.collectionGroup(SELLER_ITEMS_SUB_COLLECTION)
+    const querySnapshot = await db.collectionGroup(SELLER_ITEMS_SUB_COLLECTION)
       .where('id', '==', itemId)
       .get();
 
-    const itemDetailDoc = snapshot.empty ? null : snapshot.docs[0];
+    const itemDetailDoc = querySnapshot.empty ? null : querySnapshot.docs[0];
     // Get back top level seller document
     const document = await itemDetailDoc.ref.parent.parent.get();
 
@@ -56,6 +65,10 @@ class Seller {
     const docRef = db.doc(`${SELLERS_BASIC_COLLECTION}/${sellerId}`);
     Object.assign(sellerBasic, { id: sellerId });
     await docRef.set(sellerBasic);
+  }
+
+  static async searchBasic(field, query) {
+    return await searchCollection(query, SELLERS_BASIC_COLLECTION, field, 5);
   }
 }
 

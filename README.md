@@ -141,6 +141,31 @@ body | type | description
 ---------- | -------------- | --------------
 order_id | String | the id of the order
 
+### Search sellers
+Endpoint for searching sellers.  
+**URL**: /api/seller/search   
+**Method**: GET   
+**Auth required**: NO   
+#### Request
+body | type | description   
+---------- | -------------- | --------------
+query | String | search query
+
+
+### Deliverer verification
+Endpoint for checking the verification status of deliverer.   
+**URL**: /api/auth/verify/deliverer        
+**Method**: GET   
+**Auth required**: YES   
+#### Request
+body | type | description
+---------- | -------------- | --------------
+None |
+
+#### Response
+body | type | description
+---------- | -------------- | --------------
+verified | Boolean | Deliverer is verified.
 
 ## Functions
 Functions | Usages

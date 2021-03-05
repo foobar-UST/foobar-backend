@@ -1,5 +1,5 @@
-const { admin } = require('../../config');
-const DeviceToken = require("../../models/DeviceToken");
+const { admin } = require('../config');
+const DeviceToken = require("../models/DeviceToken");
 
 module.exports = async function sendNotifications(tokens, notification, data) {
   // No token provided

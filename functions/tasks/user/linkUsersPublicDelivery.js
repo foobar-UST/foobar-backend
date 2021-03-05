@@ -6,11 +6,11 @@ const User = require("../../models/User");
  * 2. Link update
  */
 module.exports = async function linkUsersPublicDeliveryTask(change, context) {
-  const user = change.after.exists ? change.after.data() : null;
+  const userDetail = change.after.exists ? change.after.data() : null;
   const userId = context.params.userId;
 
   // Delete user documents
-  if (user === null) {
+  if (userDetail === null) {
     return await Promise.all([
       User.deletePublic(userId),
       User.deleteDelivery(userId)
@@ -20,14 +20,14 @@ module.exports = async function linkUsersPublicDeliveryTask(change, context) {
   // Update user documents
   return await Promise.all([
     User.createPublic(userId, {
-      username:   user.username,
-      photo_url:  user.photo_url
+      username:   userDetail.username,
+      photo_url:  userDetail.photo_url
     }),
     User.createDelivery(userId, {
-      name:       user.name,
-      username:   user.username,
-      photo_url:  user.photo_url,
-      phone_num:  user.phone_num
+      name:       userDetail.name,
+      username:   userDetail.username,
+      photo_url:  userDetail.photo_url,
+      phone_num:  userDetail.phone_num
     })
   ]);
 };

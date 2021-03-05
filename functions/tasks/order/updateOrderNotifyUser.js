@@ -1,12 +1,11 @@
-const sendNotifications = require('../utils/sendNotifications');
-const { generateLongDynamicLink } = require('../utils/generateDynamicLink');
+const sendNotifications = require('../../utils/sendNotifications');
+const { generateLongDynamicLink } = require('../../utils/generateDynamicLink');
 const DeviceToken = require("../../models/DeviceToken");
-const AndroidNotificationChannels = require("../notification/AndroidNotificationChannels");
+const AndroidNotificationChannels = require("../../utils/AndroidNotificationChannels");
 const OrderState = require("../../models/OrderState");
-const UserNotification = require("../../models/UserNotification");
 
 module.exports = async function updateOrderNotifyUserTask(change, context) {
-  const orderId = context.params.orderId;
+  //const orderId = context.params.orderId;
   const prevOrderDetail = change.before.data();
   const newOrderDetail = change.after.data();
   const userId = newOrderDetail.user_id;
@@ -50,30 +49,15 @@ module.exports = async function updateOrderNotifyUserTask(change, context) {
     default: return true;
   }
 
-  const notifyUserPromises = [];
-
   // Send notification through FCM
-  notifyUserPromises.push(
-    sendNotifications(deviceTokens, {
-      title_loc_key: 'notification_order_update_state_title',
-      title_loc_args: `["${newOrderDetail.identifier}"]`,
-      body_loc_key: `${bodyLocKey}`,
-      image: `${newOrderDetail.image_url}`,
-      android_channel_id: `${AndroidNotificationChannels.ORDER}`,
-      link: `${dynamicLink}`
-    })
-  );
+  await sendNotifications(deviceTokens, {
+    title_loc_key: 'notification_order_update_state_title',
+    title_loc_args: `["${newOrderDetail.identifier}"]`,
+    body_loc_key: `${bodyLocKey}`,
+    image: `${newOrderDetail.image_url}`,
+    android_channel_id: `${AndroidNotificationChannels.ORDER}`,
+    link: `${dynamicLink}`
+  });
 
-  // Insert notification to firestore
-  notifyUserPromises.push(
-    UserNotification.create(userId, {
-      title_loc_key: 'notification_order_update_state_title',
-      title_loc_args: [newOrderDetail.identifier],
-      body_loc_key: bodyLocKey,
-      image_url: newOrderDetail.image_url,
-      link: dynamicLink
-    })
-  );
-
-  return await Promise.all(notifyUserPromises);
+  return true;
 };

@@ -1,11 +1,15 @@
 const { basename } = require('path');
-const { USER_PHOTOS_FOLDER } = require('../../constants');
-const { SELLER_IMAGES_FOLDER } = require("../../constants");
-const generateResizedImageUrl = require('../utils/generateResizedImageUrl');
 const User = require("../../models/User");
 const Seller = require("../../models/Seller");
 const SellerItem = require("../../models/SellerItem");
-const { ITEM_IMAGES_FOLDER } = require("../../constants");
+const Advertise = require("../../models/Advertise");
+const ItemCategory = require("../../models/ItemCategory");
+const generateResizedImageUrl = require('../../utils/generateResizedImageUrl');
+const { USER_PHOTOS_FOLDER,
+  SELLER_IMAGES_FOLDER,
+  ITEM_IMAGES_FOLDER,
+  ADVERTISE_IMAGES_FOLDER,
+  ITEM_CATEGORIES_IMAGES_FOLDER } = require("../../constants");
 
 module.exports = async function updateImageUrlTask(object) {
   const filePath          = object.name;                                        // 'user_photos/fFFdrdmz9zeyw7rWNjhrJaXnVOh2.jpg'
@@ -36,6 +40,14 @@ module.exports = async function updateImageUrlTask(object) {
       await updateSellerItemImage(object, fileRoot);
       break;
     }
+    case ADVERTISE_IMAGES_FOLDER: {
+      await updateAdvertiseImage(object, fileRoot);
+      break;
+    }
+    case ITEM_CATEGORIES_IMAGES_FOLDER: {
+      await updateItemCategoryImage(object, fileRoot);
+      break;
+    }
     default: {
       console.log(`Not a target folder: ${targetFolder}`);
     }
@@ -46,6 +58,7 @@ module.exports = async function updateImageUrlTask(object) {
 
 async function updateUserPhoto(object, userId) {
   const imageUrl = await generateResizedImageUrl(object, 200, 200);
+
   if (imageUrl !== null) {
     await Promise.all([
       User.updateAuth(userId, { photoURL: imageUrl }),
@@ -56,6 +69,7 @@ async function updateUserPhoto(object, userId) {
 
 async function updateSellerImage(object, sellerId) {
   const imageUrl = await generateResizedImageUrl(object, 1280, 720);
+
   if (imageUrl !== null) {
     await Seller.updateDetail(sellerId, { image_url: imageUrl });
   }
@@ -63,7 +77,24 @@ async function updateSellerImage(object, sellerId) {
 
 async function updateSellerItemImage(object, itemId) {
   const imageUrl = await generateResizedImageUrl(object, 1280, 720);
+
   if (imageUrl !== null) {
     await SellerItem.updateDetail(itemId, { image_url: imageUrl });
+  }
+}
+
+async function updateAdvertiseImage(object, sellerId) {
+  const imageUrl = await generateResizedImageUrl(object, 1280, 720);
+
+  if (imageUrl !== null) {
+    await Advertise.updateDetail(sellerId, { image_url: imageUrl });
+  }
+}
+
+async function updateItemCategoryImage(object, itemCategoryId) {
+  const imageUrl = await generateResizedImageUrl(object, 1280, 720);
+
+  if (imageUrl !== null) {
+    await ItemCategory.update(itemCategoryId, { image_url: imageUrl });
   }
 }

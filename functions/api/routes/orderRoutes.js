@@ -1,15 +1,16 @@
 const express = require('express');
 const router = express.Router();
 const orderController = require('../controllers/orderController');
-const { placeOrderValidationRules } = require("../validator/orderValidators");
+const UserRole = require("../../models/UserRole");
 const validateResult = require('../middlewares/validateResult');
 const verifyRoles = require("../middlewares/verifyRoles");
 const verifyIdToken = require("../middlewares/verifyIdToken");
-const UserRole = require("../../models/UserRole");
-const { confirmOrderDeliveredValidationRules } = require("../validator/orderValidators");
-const { updateOrderLocationValidationRules } = require("../validator/orderValidators");
-const { updateOrderStateValidationRules } = require("../validator/orderValidators");
-const { cancelOrderValidationRules } = require("../validator/orderValidators");
+const { placeOrderValidationRules,
+  confirmOrderDeliveredValidationRules,
+  updateOrderLocationValidationRules,
+  updateOrderStateValidationRules,
+  cancelOrderValidationRules,
+  rateOrderValidationRules } = require("../validator/orderValidators");
 
 router.use(verifyIdToken);
 
@@ -46,6 +47,13 @@ router.post('/deliver/confirm',
   confirmOrderDeliveredValidationRules(), validateResult,
   verifyRoles([UserRole.USER, UserRole.DELIVERER]),
   orderController.confirmOrderDelivered
+);
+
+// Rate order
+router.put('/rate',
+  rateOrderValidationRules(), validateResult,
+  verifyRoles([UserRole.USER]),
+  orderController.rateOrder
 );
 
 module.exports = router;

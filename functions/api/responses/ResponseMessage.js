@@ -31,5 +31,13 @@ module.exports = {
   ORDER_CANCEL_ORDER_SELLER_OFFLINE:                    'Seller is offline.',
   ORDER_CANCEL_ORDER_INVALID_STATE:                     'Failed to cancel order.',
 
-  UPDATE_ORDER_STATE_INVALID_STATE:                     'Invalid order state.'
+  UPDATE_ORDER_STATE_INVALID_STATE:                     'Invalid order state.',
+
+  // Rating
+  RATE_ORDER_INVALID_USER:                              'Invalid user.',
+  RATE_ORDER_INVALID_ORDER_STATE:                       'Invalid order state.',
+  RATE_ORDER_INVALID_RATING:                            'Invalid rating.',
+
+  // Auth
+  CHECK_DELIVERER_VERIFIED_NO_SELLER:                   'No restaurant found.'
 };

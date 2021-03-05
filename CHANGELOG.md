@@ -1,4 +1,8 @@
 # Changelog
+## 2021-03-05
+- Added scheduling function for randomizing advertise items.
+- Added order rating functions.
+
 ## 2020-10-6
 - Added updateUserRole.
 - Added modifySellersBasicDoc.

@@ -1,4 +1,4 @@
-const Seller = require("../../models/Seller");
+const Seller = require('../../models/Seller');
 
 /**
  * Link 'seller' collection with 'sellers_basic' collection.
@@ -18,8 +18,7 @@ module.exports = async function linkSellersBasicTask(change, context) {
     name_zh:        sellerDetail.name_zh,
     image_url:      sellerDetail.image_url,
     min_spend:      sellerDetail.min_spend,
-    rating:         sellerDetail.rating,
-    rating_count:   sellerDetail.rating_count,
+    order_rating:   sellerDetail.order_rating,
     type:           sellerDetail.type,
     online:         sellerDetail.online,
     tags:           sellerDetail.tags

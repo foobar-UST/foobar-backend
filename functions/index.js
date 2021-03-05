@@ -14,6 +14,8 @@ app.use('/user', require('./api/routes/userRoutes'));
 app.use('/cart', require('./api/routes/cartRoutes'));
 app.use('/order', require('./api/routes/orderRoutes'));
 app.use('/device', require('./api/routes/deviceRoutes'));
+app.use('/seller', require('./api/routes/sellerRoutes'));
+app.use('/auth', require('./api/routes/authRoutes'));
 
 exports.api = functions.runWith({ timeoutSeconds: 10 })
   .https
@@ -26,3 +28,4 @@ exports.seller    = require('./tasks/sellerTasks');
 exports.section   = require('./tasks/sectionTasks');
 exports.cart      = require('./tasks/cartTasks');
 exports.order     = require('./tasks/orderTasks');
+exports.promotion = require('./tasks/promotionTasks');

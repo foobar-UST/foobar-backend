@@ -1,6 +1,5 @@
-const { ORDERS_BASIC_COLLECTION } = require("../constants");
-const { ORDERS_COLLECTION } = require("../constants");
 const { db, admin } = require('../config');
+const { ORDERS_BASIC_COLLECTION, ORDERS_COLLECTION } = require('../constants');
 
 class Order {
 
@@ -48,7 +47,9 @@ class Order {
 
   static async createBasic(orderId, orderBasic) {
     const docRef = db.doc(`${ORDERS_BASIC_COLLECTION}/${orderId}`);
+
     Object.assign(orderBasic, { id: orderId });
+
     await docRef.set(orderBasic);
   }
 

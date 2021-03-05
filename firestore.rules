@@ -62,12 +62,10 @@ service cloud.firestore {
     	allow read: if request.auth.uid == userId;
       allow write: if false;
     }
-    
-    // TODO: Make sure everyone can read the advertises items and
-    // only seller can modify the them.
+
     match /advertises_basic/{advertiseId} {
     	allow read: if true;
-      allow write: if true;
+      allow write: if false;
     }
     
     // TODO: Make sure everyone can access sellers collection,
@@ -104,6 +102,38 @@ service cloud.firestore {
       	allow read: if true;
         allow write: if true;
       }
+
+      // TODO: Make sure only sellers can edit promotion documents.
+      match /advertises/{advertiseId} {
+        //allow read, write: if isRequestFromSeller(request.auth.uid, sellerId);
+        allow read, write: if true;
+      }
+
+      // TODO: Make sure only sellers can view the rating documents.
+      match /ratings/{ratingId} {
+        allow read: if isRequestFromSeller(request.auth.uid, sellerId);
+        allow write: if true;
+      }
+
+      // TODO: Make sure the public can view the rating basic documents.
+      match /ratings_basic/{ratingId} {
+        allow read: if true;
+        allow write: if false;
+      }
+    }
+
+    // TODO: Make sure everyone can access items collection,
+    // but only cloud functions can update it.
+    match /{path=**}/items/{itemId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // TODO: Make sure everyone can access sections collection,
+    // but only the seller himself can modify it.
+    match /{path=**}/sections/{sectionId} {
+      allow read: if true;
+      allow write: if true;
     }
     
     // TODO: Make sure everyone can access sections_basic collection,
@@ -113,7 +143,13 @@ service cloud.firestore {
       allow read: if true;
       allow write: if true;
     }
-    
+
+    // Make sure only sellers can view the rating documents.
+    match /{path=**}/ratings/{ratingId} {
+      allow read: if isRequestFromSeller(request.auth.uid, sellerId);
+      allow write: if false;
+    }
+
     // TODO: Make sure everyone can access sellers_basic collection,
     // but only cloud functions can update it.
     match /sellers_basic/{sellerId} {
@@ -137,6 +173,15 @@ service cloud.firestore {
     match /orders_basic/{orderId} {
       allow read: if true;
       allow write: if true;
+    }
+
+    match /item_categories/{categoryId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    function isRequestFromSeller(userId, sellerId) {
+      return userId == get(/databases/$(database)/documents/sellers/$(sellerId)).data.by_user_id;
     }
   }
 }

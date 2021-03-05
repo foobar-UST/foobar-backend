@@ -1,8 +1,7 @@
 const Seller = require("../../models/Seller");
 const UserCart = require("../../models/UserCart");
 const SellerSection = require("../../models/SellerSection");
-const { get12HourString } = require("../../utils/DateUtils");
-const { getShortDateString } = require("../../utils/DateUtils");
+const { get12HourString, getShortDateString } = require("../../utils/DateUtils");
 
 function getCartTitle(sellerDetail, sectionDetail) {
   if (!sectionDetail) {
@@ -34,7 +33,7 @@ module.exports = async function updateUserCartTask(change, context) {
 
   // Remove cart document when there is no more item in cart
   if (itemsRemainCount <= 0) {
-    return await UserCart.delete(userId);
+    return await UserCart.deleteFor(userId);
   }
 
   const sellerId          = itemsRemain[0].item_seller_id;
