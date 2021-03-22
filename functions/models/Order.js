@@ -35,7 +35,6 @@ class Order {
   }
 
   static async createDetail(orderDoc, orderDetail) {
-    //const docRef = db.collection(ORDERS_COLLECTION).doc();
     Object.assign(orderDetail, {
       id:             orderDoc.id,
       created_at:     admin.firestore.FieldValue.serverTimestamp(),

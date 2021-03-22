@@ -10,7 +10,6 @@ const OrderState = require("../../models/OrderState");
 const SellerType = require("../../models/SellerType");
 const OrderType = require("../../models/OrderType");
 const UserRole = require("../../models/UserRole");
-const OrderLocation = require("../../models/OrderLocation");
 const generateIdentifier = require("../../utils/generateIdentifier");
 const Rating = require("../../models/Rating");
 const { v4: uuidv4 } = require('uuid');
@@ -31,7 +30,10 @@ const { RATE_ORDER_INVALID_RATING,
   ORDER_CANCEL_ORDER_SELLER_OFFLINE,
   ORDER_CANCEL_ORDER_INVALID_STATE,
   RATE_ORDER_INVALID_ORDER_STATE,
-  RATE_ORDER_INVALID_USER
+  RATE_ORDER_INVALID_USER,
+  UPDATE_SECTION_LOCATION_INVALID_DELIVERER,
+  CONFIRM_ORDER_DELIVERED_NOT_SHIPPED,
+  CONFIRM_ORDER_DELIVERED_INVALID_DELIVERER
 } = require("../responses/ResponseMessage");
 
 const placeOrder = async (req, res) => {
@@ -45,11 +47,9 @@ const placeOrder = async (req, res) => {
     CartItem.getAll(userId)
   ]);
 
-  const {
-    seller_id: sellerId,
-    seller_type: sellerType,
-    section_id: sectionId
-  } = userCart;
+  const sellerId = userCart.seller_id;
+  const sellerType = userCart.seller_type;
+  const sectionId = userCart.section_id;
 
   const sellerDetail = await Seller.getDetail(sellerId);
   const sectionDetail = await SellerSection.getDetail(sectionId);
@@ -144,9 +144,6 @@ const placeOrder = async (req, res) => {
   const newOrderIdentifier = generateIdentifier(5);
   const newOrderType = sellerType === SellerType.ON_CAMPUS ? OrderType.ON_CAMPUS : OrderType.OFF_CAMPUS;
 
-  const newOrderSectionTitle = sectionDetail ? sectionDetail.title : null;
-  const newOrderSectionTitleZh = sectionDetail ? sectionDetail.title_zh : null;
-
   const newOrderDetail = {
     title:                  userCart.title,
     title_zh:               userCart.title_zh,
@@ -154,17 +151,14 @@ const placeOrder = async (req, res) => {
     seller_id:              sellerId,
     seller_name:            sellerDetail.name,
     seller_name_zh:         sellerDetail.name_zh,
-    section_id:             sectionId,
-    section_title:          newOrderSectionTitle,
-    section_title_zh:       newOrderSectionTitleZh,
-    deliverer_id:           null,
+    //deliverer_id:           null,
     identifier:             newOrderIdentifier,
     image_url:              userCart.image_url,
     type:                   newOrderType,
     order_items:            orderItems,
     order_items_count:      orderItems.length,
     state:                  OrderState.PROCESSING,
-    is_paid:                true,
+    is_paid:                false,
     payment_method:         paymentMethod,
     message:                message,
     delivery_location:      sectionDetail ? sectionDetail.delivery_location : sellerDetail.location,
@@ -172,6 +166,18 @@ const placeOrder = async (req, res) => {
     delivery_cost:          userCart.delivery_cost,
     total_cost:             userCart.total_cost,
   };
+
+  // Fields for off-campus order
+  if (sectionId) {
+    const newOrderSectionTitle = sectionDetail ? sectionDetail.title : null;
+    const newOrderSectionTitleZh = sectionDetail ? sectionDetail.title_zh : null;
+
+    Object.assign(newOrderDetail, {
+      section_id:             sectionId,
+      section_title:          newOrderSectionTitle,
+      section_title_zh:       newOrderSectionTitleZh,
+    });
+  }
 
   await Order.createDetail(newOrderDoc, newOrderDetail);
 
@@ -251,24 +257,26 @@ const updateOrderState = async (req, res) => {
   return sendSuccessResponse(res);
 };
 
-const updateOrderLocation = async (req, res) => {
-  const orderId = req.body.order_id;
-  const latitude = req.body.latitude;
-  const longitude = req.body.longitude;
-  const delivererId = req.currentUser.uid;
-
-  await OrderLocation.upsert(orderId, {
-    deliverer_id: delivererId,
-    current_location: new admin.firestore.GeoPoint(latitude, longitude)
-  });
-
-  return sendSuccessResponse(res);
-};
-
 const confirmOrderDelivered = async (req, res) => {
   const orderId = req.body.order_id;
+  const delivererUid = req.currentUser.uid;
 
-  await Order.updateDetail(orderId, { state: OrderState.DELIVERED });
+  // Verify deliverer
+  const orderDetail = await Order.getDetail(orderId);
+
+  if (orderDetail.deliverer_id !== delivererUid) {
+    return sendErrorResponse(res, 403, CONFIRM_ORDER_DELIVERED_INVALID_DELIVERER);
+  }
+
+  // Check if the current section is in transit
+  if (orderDetail.state !== OrderState.IN_TRANSIT) {
+    return sendErrorResponse(res, 403, CONFIRM_ORDER_DELIVERED_NOT_SHIPPED);
+  }
+
+  // Confirm order delivered
+  await Order.updateDetail(orderId, {
+    state: OrderState.DELIVERED
+  });
 
   return sendSuccessResponse(res);
 };
@@ -323,7 +331,6 @@ module.exports = {
   placeOrder,
   cancelOrder,
   updateOrderState,
-  updateOrderLocation,
   confirmOrderDelivered,
   rateOrder
 }

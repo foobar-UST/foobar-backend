@@ -1,7 +1,6 @@
 const Order = require("../../models/Order");
 
 module.exports = async function sectionUpdateOrderSyncTask(change, context) {
-  //const sellerId = context.params.sellerId;
   const sectionId = context.params.sectionId;
   const prevSectionDetail = change.before.data();
   const newSectionDetail = change.after.data();

@@ -33,6 +33,14 @@ module.exports = {
 
   UPDATE_ORDER_STATE_INVALID_STATE:                     'Invalid order state.',
 
+  CONFIRM_ORDER_DELIVERED_NOT_SHIPPED:                  'Section is not in transit',
+  CONFIRM_ORDER_DELIVERED_INVALID_DELIVERER:            'Invalid permission',
+
+  // Section routes
+  APPLY_SECTION_DELIVERY_EXISTING_DELIVERY:             'Failed to apply for more than one delivery.',
+  CANCEL_SECTION_DELIVERY_NO_EXISTING_DELIVERY:         'No ongoing delivery.',
+  UPDATE_SECTION_LOCATION_INVALID_DELIVERER:            'Invalid permission.',
+
   // Rating
   RATE_ORDER_INVALID_USER:                              'Invalid user.',
   RATE_ORDER_INVALID_ORDER_STATE:                       'Invalid order state.',

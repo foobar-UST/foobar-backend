@@ -9,13 +9,12 @@ app.use(cors({ origin: true }));
 app.use(express.json());
 app.use(express.text());
 
-// Url: https://us-central1-foobar-group-delivery-app.cloudfunctions.net/api
 app.use('/user', require('./api/routes/userRoutes'));
 app.use('/cart', require('./api/routes/cartRoutes'));
 app.use('/order', require('./api/routes/orderRoutes'));
 app.use('/device', require('./api/routes/deviceRoutes'));
 app.use('/seller', require('./api/routes/sellerRoutes'));
-app.use('/auth', require('./api/routes/authRoutes'));
+app.use('/section', require('./api/routes/sectionRoutes'));
 
 exports.api = functions.runWith({ timeoutSeconds: 10 })
   .https

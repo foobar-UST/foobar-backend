@@ -6,11 +6,11 @@ const validateResult = require('../middlewares/validateResult');
 const verifyRoles = require("../middlewares/verifyRoles");
 const verifyIdToken = require("../middlewares/verifyIdToken");
 const { placeOrderValidationRules,
-  confirmOrderDeliveredValidationRules,
-  updateOrderLocationValidationRules,
   updateOrderStateValidationRules,
   cancelOrderValidationRules,
-  rateOrderValidationRules } = require("../validator/orderValidators");
+  confirmOrderDeliveredValidationRules,
+  rateOrderValidationRules
+} = require('../validator/orderValidators');
 
 router.use(verifyIdToken);
 
@@ -35,21 +35,14 @@ router.post('/update',
   orderController.updateOrderState
 );
 
-// Deliverer: Update order location ('/deliver/location')
-router.post('/deliver/location',
-  updateOrderLocationValidationRules(), validateResult,
-  verifyRoles([UserRole.USER, UserRole.DELIVERER]),
-  orderController.updateOrderLocation
-);
-
-// Deliverer: Confirm order delivered ('/deliver/confirm')
-router.post('/deliver/confirm',
+// Deliverer: Confirm order is delivered
+router.post('/delivered',
   confirmOrderDeliveredValidationRules(), validateResult,
   verifyRoles([UserRole.USER, UserRole.DELIVERER]),
   orderController.confirmOrderDelivered
 );
 
-// Rate order
+// User: Rate order
 router.put('/rate',
   rateOrderValidationRules(), validateResult,
   verifyRoles([UserRole.USER]),

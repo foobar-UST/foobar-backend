@@ -40,8 +40,6 @@ module.exports = {
   ORDERS_COLLECTION:                      'orders',
   ORDERS_BASIC_COLLECTION:                'orders_basic',
 
-  ORDER_LOCATIONS_COLLECTION:             'orders_location',
-
   ORDER_STATE_PROCESSING:                 'processing',
   ORDER_STATE_PREPARING:                  'preparing',
   ORDER_STATE_IN_TRANSIT:                 'in_transit',
