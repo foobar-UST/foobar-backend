@@ -13,7 +13,11 @@ module.exports = async function sellerUpdateOrderSyncTask(change, context) {
   }
 
   // Get the ids of the orders that require sync.
-  const orderIds = await Order.getOrderIdsBy('seller_id', sellerId);
+  const orderIdsSnapshot = await Order.getOrderDetailCollectionRef()
+    .where('seller_id', '==', sellerId)
+    .get();
+
+  const orderIds = orderIdsSnapshot.docs.map(doc => doc.data().id);
 
   const updateOrderPromises = orderIds.map(orderId => {
     return Order.updateDetail(orderId, {

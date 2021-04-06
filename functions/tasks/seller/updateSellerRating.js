@@ -27,7 +27,6 @@ function getTotalRatingsCount(ratingCount) {
 module.exports = async function updateSellerRatingTask(change, context) {
   const prevRatingDetail = change.before.exists ? change.before.data() : null;
   const newRatingDetail = change.after.exists ? change.after.data() : null;
-
   const sellerId = context.params.sellerId;
 
   const sellerRef = db.doc(`${SELLERS_COLLECTION}/${sellerId}`);
@@ -189,5 +188,7 @@ module.exports = async function updateSellerRatingTask(change, context) {
     }
 
     transaction.update(sellerRef, updateData);
+
+    return Promise.resolve();
   });
 };

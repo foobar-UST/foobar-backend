@@ -3,6 +3,10 @@ const { ORDERS_BASIC_COLLECTION, ORDERS_COLLECTION } = require('../constants');
 
 class Order {
 
+  static getOrderDetailCollectionRef() {
+    return db.collection(ORDERS_COLLECTION)
+  }
+
   static async getDetail(orderId) {
     const document = await db.doc(`${ORDERS_COLLECTION}/${orderId}`).get();
     return document.exists ? document.data() : null;
@@ -11,23 +15,6 @@ class Order {
   static async getBasic(orderId) {
     const document = await db.doc(`${ORDERS_BASIC_COLLECTION}/${orderId}`).get();
     return document.exists ? document.data() : null;
-  }
-
-  static async getOrderIdsBy(field, value) {
-    const snapshot = await db.collection(ORDERS_COLLECTION)
-      .where(field, '==', value)
-      .get();
-
-    if (snapshot.empty) {
-      return [];
-    }
-
-    const orderIds = [];
-    snapshot.forEach(doc => {
-      orderIds.push(doc.data().id);
-    });
-
-    return orderIds;
   }
 
   static createDoc() {

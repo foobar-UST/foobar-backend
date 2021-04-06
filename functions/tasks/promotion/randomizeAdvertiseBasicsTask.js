@@ -1,6 +1,6 @@
-const Advertise = require("../../models/Advertise");
+const Advertise = require('../../models/Advertise');
 
 module.exports = async function randomizeAdvertiseBasicsTask(context) {
-  await Advertise.updateBasicsRandom()
+  await Advertise.updateBasicsRandom();
   return true;
 };

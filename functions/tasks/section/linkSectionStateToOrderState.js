@@ -1,45 +1,36 @@
 const Order = require("../../models/Order");
-const OrderState = require("../../models/OrderState");
 const { SectionState } = require("../../models/SectionState");
 const { toOrderState } = require("../../models/SectionState");
 
-module.exports = async function linkSectionStateToOrderState(change, context) {
+module.exports = async function linkSectionStateToOrderStateTask(change, context) {
   const sectionId = context.params.sectionId;
   const prevSectionDetail = change.before.data();
   const newSectionDetail = change.after.data();
 
-  // Return if no state change.
+  // No state change.
   if (prevSectionDetail.state === newSectionDetail.state) {
     return true;
   }
 
-  // No need to update order state if section state is 'available' or 'delivered'.
+  // No need to sync order state if section is still 'available' or 'delivered'.
   if (newSectionDetail.state === SectionState.AVAILABLE ||
       newSectionDetail.state === SectionState.DELIVERED) {
     return true;
   }
 
-  // Get orders that require state update.
-  const orderIds = await Order.getOrderIdsBy('section_id', sectionId);
+  // Get the associated orders.
+  const orderIdsSnapshot = await Order.getOrderDetailCollectionRef()
+    .where('section_id', '==', sectionId)
+    .get();
+
+  const orderIds = orderIdsSnapshot.docs.map(doc => doc.data().id);
   const newOrderState = toOrderState(newSectionDetail.state);
-  const updateData = {};
 
-  // When the order is being transit, update the deliverer data.
-  if (newOrderState === OrderState.IN_TRANSIT) {
-    Object.assign(updateData, {
-      deliverer_id: newSectionDetail.deliverer_id,
-      deliverer_location: newSectionDetail.deliverer_location
+  const updateOrderStatePromises = orderIds.map(orderId => {
+    return Order.updateDetail(orderId, {
+      state: newOrderState
     });
-  }
-
-  // Update order state.
-  Object.assign(updateData, {
-    state: newOrderState
   });
 
-  const updateStatePromises = orderIds.map(orderId => {
-    return Order.updateDetail(orderId, updateData);
-  });
-
-  return await Promise.all(updateStatePromises);
+  return await Promise.all(updateOrderStatePromises);
 };

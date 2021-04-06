@@ -38,6 +38,7 @@ module.exports = {
 
   // Section routes
   APPLY_SECTION_DELIVERY_EXISTING_DELIVERY:             'Failed to apply for more than one delivery.',
+  APPLY_SECTION_DELIVERY_INVALID_PROFILE:               'Incomplete user profile.',
   CANCEL_SECTION_DELIVERY_NO_EXISTING_DELIVERY:         'No ongoing delivery.',
   UPDATE_SECTION_LOCATION_INVALID_DELIVERER:            'Invalid permission.',
 

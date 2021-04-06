@@ -13,7 +13,11 @@ module.exports = async function sectionUpdateOrderSyncTask(change, context) {
   }
 
   // Get the ids of the orders that require sync.
-  const orderIds = await Order.getOrderIdsBy('section_id', sectionId);
+  const orderIdsSnapshot = await Order.getOrderDetailCollectionRef()
+    .where('section_id', '==', sectionId)
+    .get();
+
+  const orderIds = orderIdsSnapshot.docs.map(doc => doc.data().id);
 
   const updateOrderPromises = orderIds.map(orderId => {
     return Order.updateDetail(orderId, {

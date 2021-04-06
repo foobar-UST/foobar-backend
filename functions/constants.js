@@ -31,28 +31,31 @@ module.exports = {
   SELLER_RATINGS_SUB_COLLECTION:          'ratings',
   SELLER_RATINGS_BASIC_SUB_COLLECTION:    'ratings_basic',
 
-  SELLER_SECTION_STATE_AVAILABLE:         'available',
-  SELLER_SECTION_STATE_PROCESSING:        'processing',
-  SELLER_SECTION_STATE_PREPARING:         'preparing',
-  SELLER_SECTION_STATE_SHIPPED:           'shipped',
-  SELLER_SECTION_STATE_DELIVERED:         'delivered',
+  SELLER_SECTION_STATE_AVAILABLE:         '0_available',
+  SELLER_SECTION_STATE_PROCESSING:        '1_processing',
+  SELLER_SECTION_STATE_PREPARING:         '2_preparing',
+  SELLER_SECTION_STATE_SHIPPED:           '3_shipped',
+  SELLER_SECTION_STATE_DELIVERED:         '4_delivered',
 
   ORDERS_COLLECTION:                      'orders',
   ORDERS_BASIC_COLLECTION:                'orders_basic',
 
-  ORDER_STATE_PROCESSING:                 'processing',
-  ORDER_STATE_PREPARING:                  'preparing',
-  ORDER_STATE_IN_TRANSIT:                 'in_transit',
-  ORDER_STATE_READY_FOR_PICK_UP:          'ready_for_pick_up',
-  ORDER_STATE_DELIVERED:                  'delivered',
-  ORDER_STATE_ARCHIVED:                   'archived',
-  ORDER_STATE_CANCELLED:                  'cancelled',
+  ORDER_STATE_PROCESSING:                 '0_processing',
+  ORDER_STATE_PREPARING:                  '1_preparing',
+  ORDER_STATE_IN_TRANSIT:                 '2_in_transit',
+  ORDER_STATE_READY_FOR_PICK_UP:          '3_ready_for_pick_up',
+  ORDER_STATE_DELIVERED:                  '4_delivered',
+  ORDER_STATE_ARCHIVED:                   '5_archived',
+  ORDER_STATE_CANCELLED:                  '6_cancelled',
 
   PAYMENT_METHOD_COD:                     'cash_on_delivery',
 
   BROADCAST_MESSAGES_COLLECTION:          'broadcast_messages',
 
   ITEM_CATEGORIES_COLLECTION:             'item_categories',
+
+  TRAVEL_MODE_DRIVING:                    'driving',
+  TRAVEL_MODE_WALKING:                    'walking',
 
   // Storage folders
   USER_PHOTOS_FOLDER:                     'user_photos',

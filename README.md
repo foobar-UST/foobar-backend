@@ -129,7 +129,7 @@ body | type | description
 order_id | String | the id of the order
 order_state | String | the state of the order
 
-### Confirm Order Delivered (Deliverer)
+### Confirm Order Delivered (Seller/Deliverer)
 Endpoint for confirming an order is delivered to the customer.   
 **URL**: /api/order/delivered   
 **Method**: POST  
@@ -172,7 +172,7 @@ body | type | description
 section_id | String | the id of the section
 
 ### Update Section Location (Deliverer)
-Endpoint for updating an order's current location.   
+Endpoint for updating a section's current location.   
 **URL**: /api/section/location   
 **Method**: POST  
 **Auth required**: YES   

@@ -22,9 +22,23 @@ class SellerSection {
       `${SELLERS_COLLECTION}/${sellerId}/${SELLER_SECTIONS_BASIC_SUB_COLLECTION}/${sectionId}`
     );
 
-    Object.assign(sectionBasic, { id: sectionId });
+    Object.assign(sectionBasic, {
+      id: sectionId
+    });
 
     await docRef.set(sectionBasic);
+  }
+
+  static async createDetail(sellerId, sectionId, sectionDetail) {
+    const docRef = db.doc(
+      `${SELLERS_COLLECTION}/${sellerId}/${SELLER_SECTIONS_SUB_COLLECTION}/${sectionId}`
+    );
+
+    Object.assign(sectionDetail, {
+      id: sectionId
+    });
+
+    await docRef.set(sectionDetail, { merge: true });
   }
 
   static async deleteBasic(sellerId, sectionId) {

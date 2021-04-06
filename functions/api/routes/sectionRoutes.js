@@ -9,7 +9,8 @@ const {
   updateSectionStateValidationRules,
   applySectionDeliveryValidationRules,
   cancelSectionDeliveryValidationRules,
-  updateSectionLocationValidationRules
+  updateSectionLocationValidationRules,
+  updateSectionTravelModeValidationRules
 } = require('../validator/sectionValidators');
 
 router.use(verifyIdToken);

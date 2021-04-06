@@ -21,6 +21,7 @@ exports.api = functions.runWith({ timeoutSeconds: 10 })
   .onRequest(app);
 
 // Tasks
+exports.admin     = require('./tasks/adminTask');
 exports.storage   = require('./tasks/storageTasks');
 exports.user      = require('./tasks/userTasks');
 exports.seller    = require('./tasks/sellerTasks');

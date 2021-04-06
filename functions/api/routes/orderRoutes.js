@@ -35,7 +35,7 @@ router.post('/update',
   orderController.updateOrderState
 );
 
-// Deliverer: Confirm order is delivered
+// Seller/Deliverer: Confirm order is delivered
 router.post('/delivered',
   confirmOrderDeliveredValidationRules(), validateResult,
   verifyRoles([UserRole.USER, UserRole.DELIVERER]),

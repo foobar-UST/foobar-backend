@@ -20,9 +20,6 @@ function calculateSubtotal(itemsRemain) {
   return itemsPrices.reduce((sum, total_price) => sum + total_price);
 }
 
-/**
- * Update 'user_carts' info when a cart item is modified in 'cart_items'.
- */
 module.exports = async function updateUserCartTask(change, context) {
   const userId        = context.params.userId;
 

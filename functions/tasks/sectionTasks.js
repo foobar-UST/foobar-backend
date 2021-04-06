@@ -3,6 +3,7 @@ const { SELLER_SECTIONS_SUB_COLLECTION, SELLERS_COLLECTION } = require("../const
 const linkSectionsBasicTask = require('./section/linkSectionsBasic');
 const sectionUpdateRequireCartSyncTask = require('./section/sectionUpdateRequireCartSync');
 const linkSectionStateToOrderStateTask = require('./section/linkSectionStateToOrderState');
+const linkSectionLocationToOrderLocationTask = require('./section/linkSectionLocationToOrderLocation');
 const sectionUpdateOrderSyncTask = require('./section/sectionUpdateOrderSync');
 
 // Link with 'sections_basic' sub-collection.
@@ -19,6 +20,11 @@ exports.sectionUpdateRequireCartSync = functions.firestore
 exports.linkSectionStateToOrderState = functions.firestore
   .document(`${SELLERS_COLLECTION}/{sellerId}/${SELLER_SECTIONS_SUB_COLLECTION}/{sectionId}`)
   .onUpdate(linkSectionStateToOrderStateTask);
+
+// Link section location to order location.
+exports.linkSectionLocationToOrderLocation = functions.firestore
+  .document(`${SELLERS_COLLECTION}/{sellerId}/${SELLER_SECTIONS_SUB_COLLECTION}/{sectionId}`)
+  .onUpdate(linkSectionLocationToOrderLocationTask);
 
 // Update orders when a section is updated.
 exports.sectionUpdateOrderSync = functions.firestore

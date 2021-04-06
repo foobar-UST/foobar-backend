@@ -1,3 +1,4 @@
+const TravelMode = require("../../models/TravelMode");
 const { body } = require("express-validator");
 const { SectionState } = require("../../models/SectionState");
 
@@ -24,7 +25,8 @@ const updateSectionLocationValidationRules = () => {
   return [
     body('section_id').exists().isString(),
     body('latitude').exists().isFloat(),
-    body('longitude').exists().isFloat()
+    body('longitude').exists().isFloat(),
+    body('mode').exists().isIn(Object.values(TravelMode))
   ];
 };
 

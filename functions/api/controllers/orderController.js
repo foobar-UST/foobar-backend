@@ -31,7 +31,6 @@ const { RATE_ORDER_INVALID_RATING,
   ORDER_CANCEL_ORDER_INVALID_STATE,
   RATE_ORDER_INVALID_ORDER_STATE,
   RATE_ORDER_INVALID_USER,
-  UPDATE_SECTION_LOCATION_INVALID_DELIVERER,
   CONFIRM_ORDER_DELIVERED_NOT_SHIPPED,
   CONFIRM_ORDER_DELIVERED_INVALID_DELIVERER
 } = require("../responses/ResponseMessage");
@@ -151,7 +150,6 @@ const placeOrder = async (req, res) => {
     seller_id:              sellerId,
     seller_name:            sellerDetail.name,
     seller_name_zh:         sellerDetail.name_zh,
-    //deliverer_id:           null,
     identifier:             newOrderIdentifier,
     image_url:              userCart.image_url,
     type:                   newOrderType,
@@ -165,6 +163,7 @@ const placeOrder = async (req, res) => {
     subtotal_cost:          userCart.subtotal_cost,
     delivery_cost:          userCart.delivery_cost,
     total_cost:             userCart.total_cost,
+    verify_code:            uuidv4()
   };
 
   // Fields for off-campus order
@@ -259,22 +258,24 @@ const updateOrderState = async (req, res) => {
 
 const confirmOrderDelivered = async (req, res) => {
   const orderId = req.body.order_id;
-  const delivererUid = req.currentUser.uid;
+  const userId = req.currentUser.uid;
 
-  // Verify deliverer
+  // Verify seller or deliverer
   const orderDetail = await Order.getDetail(orderId);
 
-  if (orderDetail.deliverer_id !== delivererUid) {
+  if (orderDetail.seller_id !== userId &&
+      orderDetail.deliverer_id !== userId) {
     return sendErrorResponse(res, 403, CONFIRM_ORDER_DELIVERED_INVALID_DELIVERER);
   }
 
   // Check if the current section is in transit
-  if (orderDetail.state !== OrderState.IN_TRANSIT) {
+  if (orderDetail.state !== OrderState.READY_FOR_PICK_UP) {
     return sendErrorResponse(res, 403, CONFIRM_ORDER_DELIVERED_NOT_SHIPPED);
   }
 
   // Confirm order delivered
   await Order.updateDetail(orderId, {
+    is_paid: true,
     state: OrderState.DELIVERED
   });
 
