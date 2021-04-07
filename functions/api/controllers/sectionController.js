@@ -70,10 +70,12 @@ const cancelSectionDelivery = async (req, res) => {
   const sectionDetail = await SellerSection.getDetail(sectionInDelivery);
   const updatePromises = [];
 
-  // Update user detail
-  updatePromises.push(User.updateUser(delivererId, {
-    section_in_delivery: admin.firestore.FieldValue.delete()
-  }));
+  // Update deliverer
+  updatePromises.push(
+    User.updateUser(delivererId, {
+      section_in_delivery: admin.firestore.FieldValue.delete()
+    })
+  );
 
   // When the cutoff time is still ahead, set to available state.
   // When the cutoff time is over, set to processing state.
@@ -84,12 +86,14 @@ const cancelSectionDelivery = async (req, res) => {
   })();
 
   // Update section detail
-  updatePromises.push(SellerSection.updateDetail(sectionId, {
-    state: restoreSectionState,
-    deliverer_id: admin.firestore.FieldValue.delete(),
-    deliverer_location: admin.firestore.FieldValue.delete(),
-    deliverer_travel_mode: admin.firestore.FieldValue.delete()
-  }));
+  updatePromises.push(
+    SellerSection.updateDetail(sectionId, {
+      state: restoreSectionState,
+      deliverer_id: admin.firestore.FieldValue.delete(),
+      deliverer_location: admin.firestore.FieldValue.delete(),
+      deliverer_travel_mode: admin.firestore.FieldValue.delete()
+    })
+  );
 
   await Promise.all(updatePromises);
 
@@ -139,10 +143,46 @@ const startSectionPickup = async (req, res) => {
   return sendSuccessResponse(res);
 };
 
+const completeSectionDelivery = async (req, res) => {
+  const delivererId = req.currentUser.uid;
+  const sectionId = req.body.section_id;
+
+  // Verify deliverer
+  const sectionDetail = await SellerSection.getDetail(sectionId);
+
+  if (sectionDetail.deliverer_id !== delivererId) {
+    return sendErrorResponse(res, 403, UPDATE_SECTION_LOCATION_INVALID_DELIVERER);
+  }
+
+  // Update section
+  const updatePromises = [];
+
+  updatePromises.push(
+    SellerSection.updateDetail(sectionId, {
+      state: SectionState.DELIVERED,
+      deliverer_id: admin.firestore.FieldValue.delete(),
+      deliverer_location: admin.firestore.FieldValue.delete(),
+      deliverer_travel_mode: admin.firestore.FieldValue.delete()
+    })
+  );
+
+  // Update deliverer
+  updatePromises.push(
+    User.updateUser(delivererId, {
+      section_in_delivery: admin.firestore.FieldValue.delete()
+    })
+  );
+
+  await Promise.all(updatePromises);
+
+  return sendSuccessResponse(res);
+};
+
 module.exports = {
   updateSectionState,
   applySectionDelivery,
   cancelSectionDelivery,
   updateSectionLocation,
-  startSectionPickup
+  startSectionPickup,
+  completeSectionDelivery
 }
