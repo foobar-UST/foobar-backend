@@ -13,6 +13,7 @@ module.exports = {
   ADD_USER_CART_ITEM_SELLER_OFFLINE:                    'Seller is currently offline.',
   ADD_USER_CART_ITEM_INVALID_SELLER_ERROR:              'Can only add item from one seller.',
   ADD_USER_CART_ITEM_INVALID_SECTION_ERROR:             'Can only add item from one section.',
+  ADD_USER_CART_ITEM_MULTIPLE_ORDERS_ERROR:             'Cannot create more than one group order from the same section.',
   ADD_USER_CART_ITEM_SOLD_OUT_ERROR:                    'Item is sold out.',
   ADD_USER_CART_SECTION_UNAVAILABLE:                    'Section is unavailable.',
   REDUCE_USER_CART_ITEM_NOT_FOUND:                      'Failed to find cart item.',
@@ -41,6 +42,7 @@ module.exports = {
   APPLY_SECTION_DELIVERY_INVALID_PROFILE:               'Incomplete user profile.',
   CANCEL_SECTION_DELIVERY_NO_EXISTING_DELIVERY:         'No ongoing delivery.',
   UPDATE_SECTION_LOCATION_INVALID_DELIVERER:            'Invalid permission.',
+  START_SECTION_DELIVERY_INVALID_DELIVERER:             'Invalid permission.',
 
   // Rating
   RATE_ORDER_INVALID_USER:                              'Invalid user.',

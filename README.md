@@ -183,6 +183,15 @@ section_id | String | the id of the section
 latitude | Float | the latitude of the current location
 longitude | Float | the longitude of the current location
 
+### Start orders pick up (Deliverer)
+Endpoint for start orders pick up.   
+**URL**: /api/section/pickup   
+**Method**: POST  
+**Auth required**: YES
+#### Request
+body | type | description
+---------- | -------------- | --------------
+section_id | String | the id of the section
 
 ## Functions
 Functions | Usages

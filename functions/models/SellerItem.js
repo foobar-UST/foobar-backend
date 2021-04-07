@@ -5,7 +5,15 @@ const { SELLER_ITEMS_SUB_COLLECTION } = require("../constants");
 
 class SellerItem {
 
-  static async getDetail(sellerId, itemId) {
+  static async getDetail(itemId) {
+    const querySnapshot = await db.collectionGroup(SELLER_ITEMS_SUB_COLLECTION)
+      .where('id', '==', itemId)
+      .get();
+
+    return querySnapshot.empty ? null : querySnapshot.docs[0].data();
+  }
+
+  static async getDetailWith(sellerId, itemId) {
     const document = await db.doc(
       `${SELLERS_COLLECTION}/${sellerId}/${SELLER_ITEMS_SUB_COLLECTION}/${itemId}`
     ).get();

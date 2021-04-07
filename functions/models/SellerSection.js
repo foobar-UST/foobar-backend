@@ -6,14 +6,11 @@ const { SELLERS_COLLECTION } = require("../constants");
 class SellerSection {
 
   static async getDetail(sectionId) {
-    if (!sectionId) return null
-
     const querySnapshot = await db.collectionGroup(SELLER_SECTIONS_SUB_COLLECTION)
       .where('id', '==', sectionId)
       .get();
 
     const document = querySnapshot.empty ? null : querySnapshot.docs[0];
-
     return document.exists ? document.data() : null;
   }
 

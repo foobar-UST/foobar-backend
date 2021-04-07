@@ -30,9 +30,16 @@ const updateSectionLocationValidationRules = () => {
   ];
 };
 
+const startSectionPickupValidationRules = () => {
+  return [
+    body('section_id').exists().isString()
+  ];
+};
+
 module.exports = {
   updateSectionStateValidationRules,
   applySectionDeliveryValidationRules,
   cancelSectionDeliveryValidationRules,
-  updateSectionLocationValidationRules
+  updateSectionLocationValidationRules,
+  startSectionPickupValidationRules
 };

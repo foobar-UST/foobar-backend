@@ -24,7 +24,7 @@ const updateSectionState = async (req, res) => {
 
 const applySectionDelivery = async (req, res) => {
   const sectionId = req.body.section_id;
-  const delivererUid = req.currentUser.uid;
+  const delivererId = req.currentUser.uid;
   const userDetail = req.userDetail;
 
   // Check if the deliverer already has a ongoing delivery
@@ -32,7 +32,7 @@ const applySectionDelivery = async (req, res) => {
     return sendErrorResponse(res, 403, APPLY_SECTION_DELIVERY_EXISTING_DELIVERY);
   }
 
-  // Check if the deliverer has filled in its contact data
+  // Check if the deliverer has filled in his contact data
   if (!userDetail.name || !userDetail.phone_num) {
     return sendErrorResponse(res, 403, APPLY_SECTION_DELIVERY_INVALID_PROFILE);
   }
@@ -40,14 +40,14 @@ const applySectionDelivery = async (req, res) => {
   const updatePromises = [];
 
   // Update user detail
-  updatePromises.push(User.updateUser(delivererUid, {
+  updatePromises.push(User.updateUser(delivererId, {
     section_in_delivery: sectionId
   }));
 
   // Update section detail
   updatePromises.push(SellerSection.updateDetail(sectionId,{
     state: SectionState.SHIPPED,
-    deliverer_id: delivererUid
+    deliverer_id: delivererId
   }));
 
   await Promise.all(updatePromises);
@@ -57,7 +57,7 @@ const applySectionDelivery = async (req, res) => {
 
 const cancelSectionDelivery = async (req, res) => {
   const sectionId = req.body.section_id;
-  const delivererUid = req.currentUser.uid;
+  const delivererId = req.currentUser.uid;
   const userDetail = req.userDetail;
 
   // Check if the deliverer has a ongoing delivery
@@ -71,7 +71,7 @@ const cancelSectionDelivery = async (req, res) => {
   const updatePromises = [];
 
   // Update user detail
-  updatePromises.push(User.updateUser(delivererUid, {
+  updatePromises.push(User.updateUser(delivererId, {
     section_in_delivery: admin.firestore.FieldValue.delete()
   }));
 
@@ -97,7 +97,7 @@ const cancelSectionDelivery = async (req, res) => {
 };
 
 const updateSectionLocation = async (req, res) => {
-  const delivererUid = req.currentUser.uid;
+  const delivererId = req.currentUser.uid;
   const sectionId = req.body.section_id;
   const latitude = req.body.latitude;
   const longitude = req.body.longitude;
@@ -106,7 +106,7 @@ const updateSectionLocation = async (req, res) => {
   // Verify deliverer
   const sectionDetail = await SellerSection.getDetail(sectionId);
 
-  if (sectionDetail.deliverer_id !== delivererUid) {
+  if (sectionDetail.deliverer_id !== delivererId) {
     return sendErrorResponse(res, 403, UPDATE_SECTION_LOCATION_INVALID_DELIVERER);
   }
 
@@ -121,9 +121,28 @@ const updateSectionLocation = async (req, res) => {
   return sendSuccessResponse(res);
 };
 
+const startSectionPickup = async (req, res) => {
+  const delivererId = req.currentUser.uid;
+  const sectionId = req.body.section_id;
+
+  // Verify deliverer
+  const sectionDetail = await SellerSection.getDetail(sectionId);
+
+  if (sectionDetail.deliverer_id !== delivererId) {
+    return sendErrorResponse(res, 403, UPDATE_SECTION_LOCATION_INVALID_DELIVERER);
+  }
+
+  await SellerSection.updateDetail(sectionId, {
+    state: SectionState.READY_FOR_PICK_UP
+  });
+
+  return sendSuccessResponse(res);
+};
+
 module.exports = {
   updateSectionState,
   applySectionDelivery,
   cancelSectionDelivery,
-  updateSectionLocation
+  updateSectionLocation,
+  startSectionPickup
 }

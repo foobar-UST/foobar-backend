@@ -10,7 +10,7 @@ const {
   applySectionDeliveryValidationRules,
   cancelSectionDeliveryValidationRules,
   updateSectionLocationValidationRules,
-  updateSectionTravelModeValidationRules
+  startSectionPickupValidationRules
 } = require('../validator/sectionValidators');
 
 router.use(verifyIdToken);
@@ -41,6 +41,13 @@ router.post('/location',
   updateSectionLocationValidationRules(), validateResult,
   verifyRoles([UserRole.USER, UserRole.DELIVERER]),
   sectionController.updateSectionLocation
+);
+
+// Deliverer: Start orders pick up
+router.post('/pickup',
+  startSectionPickupValidationRules(), validateResult,
+  verifyRoles([UserRole.USER, UserRole.DELIVERER]),
+  sectionController.startSectionPickup
 );
 
 module.exports = router

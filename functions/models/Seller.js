@@ -24,18 +24,6 @@ class Seller {
     return document.exists ? document.data() : null;
   }
 
-  static async getDetailHavingItem(itemId) {
-    const querySnapshot = await db.collectionGroup(SELLER_ITEMS_SUB_COLLECTION)
-      .where('id', '==', itemId)
-      .get();
-
-    const itemDetailDoc = querySnapshot.empty ? null : querySnapshot.docs[0];
-    // Get back top level seller document
-    const document = await itemDetailDoc.ref.parent.parent.get();
-
-    return document.exists ? document.data() : null;
-  }
-
   static async detachFromUser(userId) {
     const snapshot = await db.collection(SELLERS_COLLECTION)
       .where('by_user_id', '==', userId)

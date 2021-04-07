@@ -51,7 +51,6 @@ const placeOrder = async (req, res) => {
   const sectionId = userCart.section_id;
 
   const sellerDetail = await Seller.getDetail(sellerId);
-  const sectionDetail = await SellerSection.getDetail(sectionId);
 
   // Ensure the user has filled in his profile
   if (!userDetail.roles.includes(UserRole.USER) || !userDetail.name || !userDetail.phone_num) {
@@ -73,7 +72,7 @@ const placeOrder = async (req, res) => {
 
   // Fetch all items in cart
   await Promise.all(itemIds.map(async itemId => {
-    const itemDetail = await SellerItem.getDetail(sellerId, itemId);
+    const itemDetail = await SellerItem.getDetailWith(sellerId, itemId);
     itemDetails.push(itemDetail);
   }));
 
@@ -103,7 +102,9 @@ const placeOrder = async (req, res) => {
   }
 
   // Validate off-campus order
-  if (sectionDetail) {
+  if (sectionId) {
+    const sectionDetail = await SellerSection.getDetail(sectionId);
+
     const timestampNow = admin.firestore.Timestamp.now();
     const isSectionAvailable = sectionDetail.available &&
       sectionDetail.state === SectionState.AVAILABLE &&

@@ -36,10 +36,8 @@ module.exports = async function updateUserCartTask(change, context) {
   const sellerId          = itemsRemain[0].item_seller_id;
   const sectionId         = itemsRemain[0].item_section_id;
 
-  const [sellerDetail, sectionDetail] = await Promise.all([
-    Seller.getDetail(sellerId),
-    SellerSection.getDetail(sectionId)
-  ]);
+  const sellerDetail      = await Seller.getDetail(sellerId);
+  const sectionDetail     = sectionId ? await SellerSection.getDetail(sectionId) : null;
 
   const cartTitle         = getCartTitle(sellerDetail, sectionDetail);
   const cartTitleZh       = sectionDetail ? sectionDetail.title_zh : sellerDetail.name_zh;

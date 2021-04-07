@@ -8,13 +8,15 @@ const UserCart = require("../../models/UserCart");
 const SellerItem = require("../../models/SellerItem");
 const Seller = require("../../models/Seller");
 const SellerSection = require("../../models/SellerSection");
+const Order = require("../../models/Order");
 const { REDUCE_USER_CART_ITEM_NOT_FOUND,
   ADD_USER_CART_ITEM_SOLD_OUT_ERROR,
   ADD_USER_CART_ITEM_INVALID_SELLER_ERROR,
   ADD_USER_CART_ITEM_INVALID_SECTION_ERROR,
   ADD_USER_CART_SECTION_UNAVAILABLE,
   ADD_USER_CART_ITEM_SELLER_OFFLINE,
-  SYNC_USER_CART_UP_TO_DATE
+  SYNC_USER_CART_UP_TO_DATE,
+  ADD_USER_CART_ITEM_MULTIPLE_ORDERS_ERROR
 } = require('../responses/ResponseMessage');
 
 const addUserCartItem = async (req, res) => {
@@ -23,13 +25,10 @@ const addUserCartItem = async (req, res) => {
   const itemId          = req.body.item_id;
   const amounts         = req.body.amounts;
 
-  const [sellerDetail, sectionDetail] = await Promise.all([
-    Seller.getDetailHavingItem(itemId),
-    SellerSection.getDetail(itemSectionId)
-  ]);
-
-  const [itemDetail, userCart] = await Promise.all([
-    SellerItem.getDetail(sellerDetail.id, itemId),
+  // Get the seller detail of the given item.
+  const itemDetail = await SellerItem.getDetail(itemId);
+  const [sellerDetail, userCart] = await Promise.all([
+    Seller.getDetail(itemDetail.seller_id),
     UserCart.get(userId)
   ]);
 
@@ -39,12 +38,16 @@ const addUserCartItem = async (req, res) => {
   }
 
   // Reject if the user attempts to add a new cart item from a different seller
-  if (userCart && userCart.seller_id && userCart.seller_id !== sellerDetail.id) {
+  if (userCart &&
+      userCart.seller_id &&
+      userCart.seller_id !== sellerDetail.id) {
     return sendErrorResponse(res, 403, ADD_USER_CART_ITEM_INVALID_SELLER_ERROR);
   }
 
-  // Validate section cart item
-  if (sectionDetail) {
+  // Validate cart item for off-campus sections
+  if (itemSectionId) {
+    const sectionDetail = await SellerSection.getDetail(itemSectionId);
+
     const timestampNow = admin.firestore.Timestamp.now();
     const isSectionAvailable = sectionDetail.available &&
       sectionDetail.state === SectionState.AVAILABLE &&
@@ -58,8 +61,20 @@ const addUserCartItem = async (req, res) => {
     }
 
     // Reject if the user attempts to add a new cart item from a different section
-    if (userCart && userCart.section_id && userCart.section_id !== itemSectionId) {
+    if (userCart &&
+        userCart.section_id &&
+        userCart.section_id !== itemSectionId) {
       return sendErrorResponse(res, 403, ADD_USER_CART_ITEM_INVALID_SECTION_ERROR);
+    }
+
+    // Reject if the user attempts to add a new cart item to an ordered section
+    const existingOrderSnapshot = await Order.getOrderDetailCollectionRef()
+      .where('user_id', '==', userId)
+      .where('section_id', '==', itemSectionId)
+      .get();
+
+    if (!existingOrderSnapshot.empty) {
+      return sendErrorResponse(res, 403, ADD_USER_CART_ITEM_MULTIPLE_ORDERS_ERROR);
     }
   }
 
@@ -146,7 +161,7 @@ const syncUserCart = async (req, res) => {
   // Sync all cart items
   const cartItems = await CartItem.getAll(userId);
   const syncItemAction = async (cartItem) => {
-    const itemDetail = await SellerItem.getDetail(cartItem.item_seller_id, cartItem.item_id);
+    const itemDetail = await SellerItem.getDetailWith(cartItem.item_seller_id, cartItem.item_id);
 
     // If the seller item is removed, unavailable, out-of-stock,
     // set 'available' field to false. User is expected to remove the item

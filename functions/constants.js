@@ -35,7 +35,8 @@ module.exports = {
   SELLER_SECTION_STATE_PROCESSING:        '1_processing',
   SELLER_SECTION_STATE_PREPARING:         '2_preparing',
   SELLER_SECTION_STATE_SHIPPED:           '3_shipped',
-  SELLER_SECTION_STATE_DELIVERED:         '4_delivered',
+  SELLER_SECTION_STATE_READY_FOR_PICK_UP: '4_ready_for_pick_up',
+  SELLER_SECTION_STATE_DELIVERED:         '5_delivered',
 
   ORDERS_COLLECTION:                      'orders',
   ORDERS_BASIC_COLLECTION:                'orders_basic',
