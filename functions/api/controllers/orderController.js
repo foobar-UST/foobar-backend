@@ -102,9 +102,9 @@ const placeOrder = async (req, res) => {
   }
 
   // Validate off-campus order
-  if (sectionId) {
-    const sectionDetail = await SellerSection.getDetail(sectionId);
+  const sectionDetail = sectionId ? await SellerSection.getDetail(sectionId) : null;
 
+  if (sectionId) {
     const timestampNow = admin.firestore.Timestamp.now();
     const isSectionAvailable = sectionDetail.available &&
       sectionDetail.state === SectionState.AVAILABLE &&
@@ -160,7 +160,7 @@ const placeOrder = async (req, res) => {
     is_paid:                false,
     payment_method:         paymentMethod,
     message:                message,
-    delivery_location:      sectionDetail ? sectionDetail.delivery_location : sellerDetail.location,
+    delivery_location:      sectionId ? sectionDetail.delivery_location : sellerDetail.location,
     subtotal_cost:          userCart.subtotal_cost,
     delivery_cost:          userCart.delivery_cost,
     total_cost:             userCart.total_cost,

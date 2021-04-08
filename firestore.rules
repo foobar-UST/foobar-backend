@@ -21,167 +21,202 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-  	// Make sure only the user himself can request his own document,
-    // but only cloud functions can update it.
     match /users/{userId} {
-    	//allow read, write: if true;
+      // Make sure only the user himself can request his profile.
     	allow read, write: if request.auth.uid == userId;
       
-      // Make sure only the user himself can modify the cart_items collection.
+      // Make sure only the user himself can modify 'cart_items' collection.
       match /cart_items/{cartItemId} {
       	allow read, write: if request.auth.uid == userId;
       }
-      
-      // TODO: Make sure only the users can accecss his suggest items,
-      // but only cloud functions can update it.
-    	match /suggests_basic/{suggestId} {
-    		allow read: if request.auth.uid == userId;
-        allow write: if true;
-    	}
-
-      match /notifications/{notificationId} {
-        allow read, write: if request.auth.uid == userId;
-      }
     }
     
-    // Make sure only cloud function can modify users_delivery collection.
+    // 'users_delivery'
+    // Read: deliverer
+    // Write: no one
     match /users_delivery/{userId} {
-    	allow read: if request.auth != null;
+    	allow read: if isUserDeliverer(userId);
       allow write: if false;
     }
-    
-    // TODO: Make sure only cloud function can modify users_public collection.
+
+    // 'users_public'
+    // Read: valid users
+    // Write: no one
     match /users_public/{userId} {
-    	allow read: if true;
+    	allow read: if request.auth.uid != null;
       allow write: if false;
     }
     
-    // Make sure only the user himself can read his user_carts document,
-    // and only functions can update it.
+    // 'user_carts'
+    // Read: cart owner
+    // Write: no one
     match /user_carts/{userId} {
     	allow read: if request.auth.uid == userId;
       allow write: if false;
     }
 
+    // 'advertises_basic'
+    // Read: everyone
+    // Write: no one
     match /advertises_basic/{advertiseId} {
     	allow read: if true;
       allow write: if false;
     }
     
-    // TODO: Make sure everyone can access sellers collection,
-    // but only the seller himself can modify it.
+    // 'sellers'
+    // Read: everyone
+    // Write: seller
     match /sellers/{sellerId} {
-    	//allow read: if request.auth != null;
       allow read: if true;
-      allow write: if true;
+      allow write: if isRestOwner(request.auth.uid, sellerId);
       
-      // TODO: Make sure everyone can access sellers collection,
-    	// but only the seller himself can modify it.
+      // 'sellers/catalogs'
+    	// Read: everyone
+      // Write: seller
     	match /catalogs/{catalogId} {
      		allow read: if true;
-      	allow write: if true;
+      	allow write: if isRestOwner(request.auth.uid, sellerId);
     	}
       
-      // TODO: Make sure everyone can access items collection,
-    	// but only cloud functions can update it.
+      // 'sellers/items'
+      // Read: everyone
+      // Write: seller
+      // Write: seller
     	match /items/{itemId} {
     		allow read: if true;
-      	allow write: if true;
+      	allow write: if isRestOwner(request.auth.uid, sellerId);
     	}
-      
-      // TODO: Make sure everyone can access items_basic collection,
-    	// but only cloud functions can update it.
+
+      // 'sellers/items_basic'
+      // Read: everyone
+    	// Write: no one
     	match /items_basic/{itemId} {
     		allow read: if true;
-      	allow write: if true;
+      	allow write: if false;
     	}
       
-      // TODO: Make sure everyone can access sections collection,
-      // but only the seller himself can modify it.
+      // 'sellers/sections'
+      // Read: everyone
+      // Write: seller
       match /sections/{sectionId} {
       	allow read: if true;
+        //TODO: allow write: if isRestOwner(request.auth.uid, sellerId);
         allow write: if true;
       }
 
-      // TODO: Make sure only sellers can edit promotion documents.
+      // 'sellers/advertises'
+      // Read: everyone
+      // Write: seller
       match /advertises/{advertiseId} {
-        //allow read, write: if isRequestFromSeller(request.auth.uid, sellerId);
-        allow read, write: if true;
+        allow read: if true;
+        allow write: if isRestOwner(request.auth.uid, sellerId);
       }
 
-      // TODO: Make sure only sellers can view the rating documents.
+      // 'sellers/ratings'
+      // Read: seller
+      // Write: no one
       match /ratings/{ratingId} {
-        allow read: if isRequestFromSeller(request.auth.uid, sellerId);
-        allow write: if true;
+        allow read: if isUserSeller(request.auth.uid);
+        allow write: if false;
       }
 
-      // TODO: Make sure the public can view the rating basic documents.
+      // 'sellers/ratings_basic'
+      // Read: public
+      // Write: no one
       match /ratings_basic/{ratingId} {
         allow read: if true;
         allow write: if false;
       }
     }
 
-    // TODO: Make sure everyone can access items collection,
-    // but only cloud functions can update it.
+    // Collection group: 'sellers/items'
+    // Read: public
+    // Write: seller
     match /{path=**}/items/{itemId} {
       allow read: if true;
-      allow write: if true;
+      allow write: if isRestOwner(request.auth.uid, sellerId);
     }
 
-    // TODO: Make sure everyone can access sections collection,
-    // but only the seller himself can modify it.
+    // Collection group: 'sellers/sections'
+    // Read: public
+    // Write: seller
     match /{path=**}/sections/{sectionId} {
       allow read: if true;
-      allow write: if true;
-    }
-    
-    // TODO: Make sure everyone can access sections_basic collection,
-    // but only cloud functions can update it.
-    // Use wildcard for collection group query.
-    match /{path=**}/sections_basic/{sectionId} {
-      allow read: if true;
+      // TODO: allow write: if isRestOwner(request.auth.uid, sellerId);
       allow write: if true;
     }
 
-    // Make sure only sellers can view the rating documents.
-    match /{path=**}/ratings/{ratingId} {
-      allow read: if isRequestFromSeller(request.auth.uid, sellerId);
+    // Collection group: 'sellers/sections_basic'
+    // Read: public
+    // Write: no one
+    match /{path=**}/sections_basic/{sectionId} {
+      allow read: if true;
       allow write: if false;
     }
 
-    // TODO: Make sure everyone can access sellers_basic collection,
-    // but only cloud functions can update it.
+    // Collection group: 'sellers/ratings'
+    // Read: seller
+    // Write: no one
+    match /{path=**}/ratings/{ratingId} {
+      allow read: if isUserSeller(request.auth.uid);
+      allow write: if false;
+    }
+
+    // 'sellers_basic'
+    // Read: public
+    // Write: no one
     match /sellers_basic/{sellerId} {
     	allow read: if true;
-      allow write: if true;
+      allow write: if false;
     }
-  	
-    // TODO: Make sure everyone can access payment_methods collection,
-    // but only admin can update it.
+
+    // 'payment_methods'
+    // Read: valid user
+    // Write: no one
     match /payment_methods/{paymentMethodId} {
-    	allow read: if true;
-      allow write: if true;
+    	allow read: if request.auth.uid != null;
+      allow write: if false;
     }
 
-    // TODO: 
+    // 'orders'
+    // Read: order owner
+    // Write: no one
     match /orders/{orderId} {
-      allow read: if true;
-      allow write: if true;
+      allow read: if request.auth.uid != null;
+      allow write: if false;
     }
 
+    // 'orders_basic'
+    // Read: order owner
+    // Write: no one
     match /orders_basic/{orderId} {
-      allow read: if true;
-      allow write: if true;
+      allow read: if request.auth.uid != null;
+      allow write: if false;
     }
 
+    // 'item_categories'
+    // Read: public
+    // Write: no one
     match /item_categories/{categoryId} {
       allow read: if true;
-      allow write: if true;
+      allow write: if false;
     }
 
-    function isRequestFromSeller(userId, sellerId) {
+    function isRestOwner(userId, sellerId) {
       return userId == get(/databases/$(database)/documents/sellers/$(sellerId)).data.by_user_id;
+    }
+
+    function isUserSeller(userId) {
+      let userDetail = get(/databases/$(database)/documents/users/$(userId)).data;
+      return 'seller' in userDetail.roles;
+    }
+
+    function isUserDeliverer(userId) {
+      let userDetail = get(/databases/$(database)/documents/users/$(userId)).data;
+      let hasRole = 'deliverer' in userDetail.roles;
+      let hasBeenEmployed = userDetail.employed != null;
+
+      return hasRole && hasBeenEmployed;
     }
   }
 }
