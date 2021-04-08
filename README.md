@@ -160,6 +160,7 @@ Endpoint for updating the state of a section.
 body | type | description
 ---------- | -------------- | --------------
 section_id | String | the id of the section
+section_state | String | the state of the section
 
 ### Apply for Section Delivery (Deliverer)
 Endpoint for applying for a section delivery.   
