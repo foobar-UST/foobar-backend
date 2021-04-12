@@ -171,6 +171,7 @@ Endpoint for applying for a section delivery.
 body | type | description
 ---------- | -------------- | --------------
 section_id | String | the id of the section
+section_state | String | the updated state of the section
 
 ### Update Section Location (Deliverer)
 Endpoint for updating a section's current location.   
@@ -197,7 +198,34 @@ section_id | String | the id of the section
 ## Functions
 Functions | Usages
 ---------- | --------------
-TODO: Documentation |
+cart-updateUserCart | Update 'user_carts' info when a cart item is modified in 'cart_items'.
+order-linkOrdersBasic | Link with 'orders_basic' collection.
+order-updateOrderNotifyUser | Send notifications to users when the order state is changed.
+order-modifyOrderUpdateSection | Update the section document when a new group order is modified.
+promotion-randomizeAdvertiseBasics | Randomize 'advertise_basics' documents every day to ensure display fairness.
+section-linkSectionsBasic | Link with 'sections_basic' sub-collection.
+section-sectionUpdateRequireCartSync | Update user' cart info when a section is updated.
+section-linkSectionStateToOrderState | Link section state to orders state.
+section-linkSectionLocationToOrderLocation | Link section location to order location.
+section-sectionUpdateOrderSync | Update orders when a section is updated.
+section-deleteSectionResources | Delete section resources.
+seller-linkSellersBasic | Link with 'seller_basic' collection.
+seller-sellerUpdateRequireCartSync | Update user' cart info when a seller is updated.
+seller-sellerUpdateOrderSync | Update orders when a seller is updated.
+seller-deleteSellerResources | Delete seller resources.
+seller-updateItemAvailability | Update items' available state based on their belonged catalog state.
+seller-linkItemsBasic | Link with 'items_basic' sub-collection.
+seller-itemUpdateRequireCartSync | Update user' cart info when a item is updated.
+seller-deleteItemResources | Delete item resources.
+seller-linkAdvertisesBasic | Link with 'advertises_basic' collection.
+seller-newAdvertiseNotifyUsers | Send notification to all users when a new seller advertisement is created.
+seller-updateSellerRating | Update seller average rating
+seller-linkRatingsBasic | Link with 'ratings_basic' sub collection.
+storage-updateImageUrl | Update image url fields when a new image is uploaded.
+user-copyAuthToUsers | Create new user document when a new user account is created in Auth.
+user-deleteUser | Clean up resources when a user is deleted.
+user-linkUserCollections | Link with 'users_delivery' and 'users_public'.
+user-updateUserSyncRating | Update user rating documents.
 
 
 ## Deploy

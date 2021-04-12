@@ -1,4 +1,16 @@
 module.exports = {
+  SELLER_IMAGE_WIDTH:                     1280,
+  SELLER_IMAGE_HEIGHT:                    720,
+  USER_PHOTO_IMAGE_SIZE:                  200,
+  SELLER_ITEM_IMAGE_WIDTH:                1280,
+  SELLER_ITEM_IMAGE_HEIGHT:               720,
+  SECTION_IMAGE_WIDTH:                    1280,
+  SECTION_IMAGE_HEIGHT:                   720,
+  ADVERTISE_IMAGE_WIDTH:                  1280,
+  ADVERTISE_IMAGE_HEIGHT:                 720,
+  ITEM_CATEGORY_IMAGE_WIDTH:              1280,
+  ITEM_CATEGORY_IMAGE_HEIGHT:             720,
+
   USERS_COLLECTION:                       'users',
   USERS_DELIVERY_COLLECTION:              'users_delivery',
   USERS_PUBLIC_COLLECTION:                'users_public',
@@ -61,6 +73,7 @@ module.exports = {
   // Storage folders
   USER_PHOTOS_FOLDER:                     'user_photos',
   SELLER_IMAGES_FOLDER:                   'seller_images',
+  SELLER_SECTION_IMAGES_FOLDER:           'section_images',
   ITEM_IMAGES_FOLDER:                     'item_images',
   ADVERTISE_IMAGES_FOLDER:                'advertise_images',
   ITEM_CATEGORIES_IMAGES_FOLDER:          'item_categories_images'

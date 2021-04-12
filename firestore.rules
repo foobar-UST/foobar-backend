@@ -23,19 +23,19 @@ service cloud.firestore {
   match /databases/{database}/documents {
     match /users/{userId} {
       // Make sure only the user himself can request his profile.
-    	allow read, write: if request.auth.uid == userId;
-      
+      allow read, write: if request.auth.uid == userId;
+
       // Make sure only the user himself can modify 'cart_items' collection.
       match /cart_items/{cartItemId} {
-      	allow read, write: if request.auth.uid == userId;
+        allow read, write: if request.auth.uid == userId;
       }
     }
-    
+
     // 'users_delivery'
     // Read: deliverer
     // Write: no one
     match /users_delivery/{userId} {
-    	allow read: if isUserDeliverer(userId);
+      allow read: if request.auth.uid != null;
       allow write: if false;
     }
 
@@ -43,15 +43,15 @@ service cloud.firestore {
     // Read: valid users
     // Write: no one
     match /users_public/{userId} {
-    	allow read: if request.auth.uid != null;
+      allow read: if request.auth.uid != null;
       allow write: if false;
     }
-    
+
     // 'user_carts'
     // Read: cart owner
     // Write: no one
     match /user_carts/{userId} {
-    	allow read: if request.auth.uid == userId;
+      allow read: if request.auth.uid == userId;
       allow write: if false;
     }
 
@@ -59,49 +59,49 @@ service cloud.firestore {
     // Read: everyone
     // Write: no one
     match /advertises_basic/{advertiseId} {
-    	allow read: if true;
+      allow read: if true;
       allow write: if false;
     }
-    
+
     // 'sellers'
     // Read: everyone
     // Write: seller
     match /sellers/{sellerId} {
       allow read: if true;
-      allow write: if isRestOwner(request.auth.uid, sellerId);
-      
+      allow write: if request.auth.uid != null;
+
       // 'sellers/catalogs'
-    	// Read: everyone
+      // Read: everyone
       // Write: seller
-    	match /catalogs/{catalogId} {
-     		allow read: if true;
-      	allow write: if isRestOwner(request.auth.uid, sellerId);
-    	}
-      
+      match /catalogs/{catalogId} {
+        allow read: if true;
+        allow write: if isRestOwner(request.auth.uid, sellerId);
+      }
+
       // 'sellers/items'
       // Read: everyone
       // Write: seller
       // Write: seller
-    	match /items/{itemId} {
-    		allow read: if true;
-      	allow write: if isRestOwner(request.auth.uid, sellerId);
-    	}
+      match /items/{itemId} {
+        allow read: if true;
+        allow write: if isRestOwner(request.auth.uid, sellerId);
+      }
 
       // 'sellers/items_basic'
       // Read: everyone
-    	// Write: no one
-    	match /items_basic/{itemId} {
-    		allow read: if true;
-      	allow write: if false;
-    	}
-      
+      // Write: no one
+      match /items_basic/{itemId} {
+        allow read: if true;
+        allow write: if false;
+      }
+
       // 'sellers/sections'
       // Read: everyone
       // Write: seller
       match /sections/{sectionId} {
-      	allow read: if true;
+        allow read: if true;
         //TODO: allow write: if isRestOwner(request.auth.uid, sellerId);
-        allow write: if true;
+        allow write: if request.auth.uid != null;
       }
 
       // 'sellers/advertises'
@@ -166,7 +166,7 @@ service cloud.firestore {
     // Read: public
     // Write: no one
     match /sellers_basic/{sellerId} {
-    	allow read: if true;
+      allow read: if true;
       allow write: if false;
     }
 
@@ -174,7 +174,7 @@ service cloud.firestore {
     // Read: valid user
     // Write: no one
     match /payment_methods/{paymentMethodId} {
-    	allow read: if request.auth.uid != null;
+      allow read: if request.auth.uid != null;
       allow write: if false;
     }
 

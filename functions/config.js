@@ -11,8 +11,7 @@ admin.initializeApp({
 const db = admin.firestore();
 db.settings({ ignoreUndefinedProperties: true });
 
-const functions = firebase_functions
-  .region('asia-east2');
+const functions = firebase_functions.region('asia-east2');
 
 module.exports = { 
   admin, 

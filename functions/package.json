@@ -3,17 +3,18 @@
   "description": "Cloud Functions for Firebase",
   "scripts": {
     "lint": "eslint .",
-    "serve": "firebase emulators:start --only functions",
+    "serve": "firebase emulators:start --import=../emulator-test --export-on-exit",
     "shell": "firebase functions:shell",
     "start": "npm run shell",
     "deploy": "firebase deploy --only functions",
     "logs": "firebase functions:log",
-    "test": "mocha --reporter spec"
+    "test": "mocha 'test/**/*.js' --recursive --reporter spec"
   },
   "engines": {
     "node": "10"
   },
   "dependencies": {
+    "@firebase/rules-unit-testing": "^1.2.7",
     "@google-cloud/storage": "^5.5.0",
     "axios": "^0.21.1",
     "body-parser": "^1.19.0",
