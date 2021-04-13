@@ -185,10 +185,8 @@ const syncUserCart = async (req, res) => {
   await Promise.all(syncItemJobs);
 
   // Sync user cart info, and reset 'sync_required'.
-  const [sellerDetail, sectionDetail] = await Promise.all([
-    Seller.getDetail(userCart.seller_id),
-    SellerSection.getDetail(userCart.section_id)
-  ]);
+  const sellerDetail = await Seller.getDetail(userCart.seller_id);
+  const sectionDetail = userCart.section_id ? await SellerSection.getDetail(userCart.section_id) : null;
 
   const cartTitle = sectionDetail ? sectionDetail.title : sellerDetail.name;
   const cartTitleZh = sectionDetail ? sectionDetail.title_zh : sellerDetail.name_zh;

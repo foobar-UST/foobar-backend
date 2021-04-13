@@ -72,8 +72,8 @@ const generateResizedImageUrl = async (object, width, height) => {
 
   return (await bucket.file(outputBucketPath)
       .getSignedUrl({
-        action:   'read',
-        expires:  expireDay
+        action: 'read',
+        expires: expireDay
       })
   ).toString();
 }
