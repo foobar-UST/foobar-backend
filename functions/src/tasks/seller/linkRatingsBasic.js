@@ -14,6 +14,7 @@ module.exports = async function linkRatingsBasicTask(change, context) {
     user_photo_url: ratingDetail.user_photo_url,
     order_rating: ratingDetail.order_rating,
     delivery_rating: ratingDetail.delivery_rating,
+    comment: ratingDetail.comment,
     created_at: ratingDetail.created_at
   });
 

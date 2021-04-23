@@ -290,6 +290,7 @@ const rateOrder = async (req, res) => {
   const orderId = req.body.order_id;
   const orderRating = req.body.order_rating;
   const deliveryRating = req.body.delivery_rating;
+  const comment = req.body.comment;
 
   // Find the seller id of the order
   const orderDetail = await Order.getDetail(orderId);
@@ -317,7 +318,8 @@ const rateOrder = async (req, res) => {
       user_photo_url: userDetail.photo_url,
       order_id: orderId,
       order_rating: orderRating,
-      delivery_rating: deliveryRating
+      delivery_rating: deliveryRating,
+      comment: comment
     }),
     Order.updateDetail(orderId, {
       state: OrderState.ARCHIVED

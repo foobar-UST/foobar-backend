@@ -32,7 +32,8 @@ const rateOrderValidationRules = () => {
   return [
     body('order_id').exists().isString(),
     body('order_rating').exists().isInt({ min: 0, max: 5 }),
-    body('delivery_rating').optional().isBoolean()
+    body('delivery_rating').optional().isBoolean(),
+    body('comment').optional().isString()
   ];
 };
 
