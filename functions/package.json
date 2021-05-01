@@ -8,13 +8,12 @@
     "start": "npm run shell",
     "deploy": "firebase deploy --only functions",
     "logs": "firebase functions:log",
-    "test": "mocha 'test/**/*.js' --recursive --reporter spec"
+    "test": "mocha 'test/**/*.js' --timeout 5000 --recursive --reporter spec"
   },
   "engines": {
     "node": "10"
   },
   "dependencies": {
-    "@firebase/rules-unit-testing": "^1.2.7",
     "@google-cloud/storage": "^5.5.0",
     "axios": "^0.21.1",
     "body-parser": "^1.19.0",
@@ -32,6 +31,7 @@
     "uuid": "^8.3.1"
   },
   "devDependencies": {
+    "@firebase/rules-unit-testing": "^1.2.11",
     "babel-eslint": "^10.1.0",
     "chai": "^4.2.0",
     "eslint": "^5.12.0",

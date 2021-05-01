@@ -1,9 +1,7 @@
-const User = require("../../models/User");
+const User = require('../../models/User');
 
 /**
  * Link 'user' collection with 'users_public' and 'users_delivery' collections.
- * 1. Link deletion
- * 2. Link update
  */
 module.exports = async function linkUsersPublicDeliveryTask(change, context) {
   const userDetail = change.after.exists ? change.after.data() : null;

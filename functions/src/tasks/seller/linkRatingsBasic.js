@@ -10,6 +10,7 @@ module.exports = async function linkRatingsBasicTask(change, context) {
   }
 
   await Rating.createBasic(sellerId, ratingId, {
+    user_id: ratingDetail.user_id,
     username: ratingDetail.username,
     user_photo_url: ratingDetail.user_photo_url,
     order_rating: ratingDetail.order_rating,

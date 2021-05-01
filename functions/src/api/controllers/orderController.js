@@ -314,6 +314,7 @@ const rateOrder = async (req, res) => {
   // Set to archived state
   const ratingPromises = [
     Rating.createDetail(sellerId, {
+      user_id: userDetail.id,
       username: userDetail.username,
       user_photo_url: userDetail.photo_url,
       order_id: orderId,

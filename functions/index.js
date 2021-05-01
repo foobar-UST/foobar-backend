@@ -3,12 +3,14 @@ const express = require('express');
 const cors = require('cors');
 const app = express();
 
+// Load environment variables
 require('dotenv').config();
 
 app.use(cors({ origin: true }));
 app.use(express.json());
 app.use(express.text());
 
+// Functions
 app.use('/user', require('./src/api/routes/userRoutes'));
 app.use('/cart', require('./src/api/routes/cartRoutes'));
 app.use('/order', require('./src/api/routes/orderRoutes'));
