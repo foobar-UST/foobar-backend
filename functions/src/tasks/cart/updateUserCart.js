@@ -1,27 +1,34 @@
-const Seller = require("../../models/Seller");
-const UserCart = require("../../models/UserCart");
-const SellerSection = require("../../models/SellerSection");
-const { get12HourString, getShortDateString } = require("../../utils/DateUtils");
+const Seller = require('../../models/Seller');
+const UserCart = require('../../models/UserCart');
+const SellerSection = require('../../models/SellerSection');
+const { get12HourString, getShortDateString } = require('../../utils/DateUtils');
 
-function getCartTitle(sellerDetail, sectionDetail) {
+const generateCartTitle = (sellerDetail, sectionDetail) => {
   if (!sectionDetail) {
+    // Title for on-campus
     return sellerDetail.name;
   } else {
-    const sectionDeliveryDate = getShortDateString(sectionDetail.delivery_time.toDate());
-    const sectionDeliveryTime = get12HourString(sectionDetail.delivery_time.toDate());
-    const sectionTitle = sectionDetail.title;
+    // Title for off-campus
+    const deliveryDate = getShortDateString(sectionDetail.delivery_time.toDate());
+    const deliveryTime = get12HourString(sectionDetail.delivery_time.toDate());
 
-    return `(${sectionDeliveryDate} @ ${sectionDeliveryTime}) ${sectionTitle}`;
+    console.log(deliveryDate)
+
+    return `(${deliveryDate} @ ${deliveryTime}) ${sectionDetail.title}`;
   }
-}
+};
 
-function calculateSubtotal(itemsRemain) {
+const generateCartTitleZh = (sellerDetail, sectionDetail) => {
+  return sectionDetail ? sectionDetail.title_zh : sellerDetail.name_zh;
+};
+
+const computeSubtotal = itemsRemain => {
   const itemsPrices = itemsRemain.map(cartItem => cartItem.total_price);
   return itemsPrices.reduce((sum, total_price) => sum + total_price);
-}
+};
 
 module.exports = async function updateUserCartTask(change, context) {
-  const userId        = context.params.userId;
+  const userId            = context.params.userId;
 
   // Get all existing cart items
   const itemsSnapshot     = await change.after.ref.parent.get();
@@ -39,8 +46,8 @@ module.exports = async function updateUserCartTask(change, context) {
   const sellerDetail      = await Seller.getDetail(sellerId);
   const sectionDetail     = sectionId ? await SellerSection.getDetail(sectionId) : null;
 
-  const cartTitle         = getCartTitle(sellerDetail, sectionDetail);
-  const cartTitleZh       = sectionDetail ? sectionDetail.title_zh : sellerDetail.name_zh;
+  const cartTitle         = generateCartTitle(sellerDetail, sectionDetail);
+  const cartTitleZh       = generateCartTitleZh(sellerDetail, sectionDetail);
   const cartImageUrl      = sectionDetail ? sectionDetail.image_url : sellerDetail.image_url;
   const pickupLocation    = sectionDetail ? sectionDetail.delivery_location : sellerDetail.location;
   const deliveryTime      = sectionDetail ? sectionDetail.delivery_time : null;
@@ -48,7 +55,7 @@ module.exports = async function updateUserCartTask(change, context) {
   const sectionTitleZh    = sectionDetail ? sectionDetail.title_zh : null;
 
   // Order costs
-  const subtotalCost      = calculateSubtotal(itemsRemain);
+  const subtotalCost      = computeSubtotal(itemsRemain);
   const deliveryCost      = sectionDetail ? sectionDetail.delivery_cost : 0;
   const totalCost         = deliveryCost + subtotalCost;
 

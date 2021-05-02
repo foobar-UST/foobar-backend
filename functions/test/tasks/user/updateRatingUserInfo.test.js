@@ -1,5 +1,5 @@
 const { db, admin, clearDb } = require('../../../config.test');
-const { delay, loop } = require('../../utils/testUtils');
+const { delay } = require('../../utils/testUtils');
 const { assert } = require('chai');
 const { v4: uuidv4 } = require('uuid');
 
@@ -7,12 +7,12 @@ const { v4: uuidv4 } = require('uuid');
 // 2. Update user photo url
 // 3. Check if all rating documents contain the updated photo url
 
-describe('Test updateUserSyncRating', async () => {
+describe('Test updateRatingUserInfo', async () => {
   const testSellerId = uuidv4();
   const newPhotoUrl = 'localhost';
 
   before(async () => {
-    const testRatingsCount = 5;
+    const testRatingsCount = 1;
 
     // Create a new user document
     const testUserId = 'test_user';
@@ -28,26 +28,21 @@ describe('Test updateUserSyncRating', async () => {
 
     await db.doc(`users/${testUserId}`).set(testUserDoc);
 
-    // Insert a few rating documents
-    const batch = db.batch();
-    loop(testRatingsCount) (() => {
-      const docRef = db.collection(`sellers/${testSellerId}/ratings`).doc();
-
-      batch.set(docRef, {
-        id: docRef.id,
-        username: testUserDoc.username,
-        user_photo_url: testUserDoc.photo_url,
-        order_id: uuidv4(),
-        order_rating: 3.0,
-        delivery_rating: true,
-        comment: 'Nice!',
-        created_at: admin.firestore.Timestamp.now()
-      });
+    // Insert a new rating document
+    const ratingDocRef = db.collection(`sellers/${testSellerId}/ratings`).doc();
+    await ratingDocRef.set({
+      id: ratingDocRef.id,
+      user_id: testUserDoc.id,
+      username: testUserDoc.username,
+      user_photo_url: testUserDoc.photo_url,
+      order_id: uuidv4(),
+      order_rating: 3.0,
+      delivery_rating: true,
+      comment: 'Nice!',
+      created_at: admin.firestore.Timestamp.now()
     });
 
-    await batch.commit();
-
-    // Update user photo url
+    // Update user photo
     await db.doc(`users/${testUserId}`).update({
       photo_url: newPhotoUrl
     });
@@ -55,6 +50,9 @@ describe('Test updateUserSyncRating', async () => {
     await delay(3000);
   });
 
+  after(async () => {
+    await clearDb();
+  });
 
   it('should update user photo url in ratings', async () => {
     const snap = await db.collection(`sellers/${testSellerId}/ratings`).get();

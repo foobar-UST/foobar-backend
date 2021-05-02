@@ -1,3 +1,4 @@
+const { loop } = require('../../test/utils/testUtils');
 const { db, admin } = require('../../config');
 const { SELLERS_COLLECTION,
   SELLER_RATINGS_SUB_COLLECTION,
@@ -28,23 +29,24 @@ class Rating {
     await docRef.set(ratingBasic);
   }
 
-  static async updateFor(userId, data) {
-    const querySnapshot = await db.collectionGroup(SELLER_RATINGS_SUB_COLLECTION)
+  static async updateUserInfo(userId, data) {
+    const snapshot = await db.collectionGroup(SELLER_RATINGS_SUB_COLLECTION)
       .where('user_id', '==', userId)
       .get();
 
-    const updatePromises = querySnapshot.docs.map(doc => {
-      return doc.ref.update(data);
+    const batch = db.batch();
+
+    snapshot.forEach(doc => {
+      batch.update(doc.ref, data);
     });
 
-    await Promise.all(updatePromises);
+    await batch.commit();
   }
 
   static async deleteBasic(sellerId, ratingId) {
     const docRef = db.doc(
       `${SELLERS_COLLECTION}/${sellerId}/${SELLER_RATINGS_BASIC_SUB_COLLECTION}/${ratingId}`
     );
-
     await docRef.delete();
   }
 

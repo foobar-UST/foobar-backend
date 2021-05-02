@@ -11,6 +11,7 @@ const app = admin.initializeApp({ projectId });
 
 // Firestore
 const db = firebase.firestore(app);
+db.settings({ ignoreUndefinedProperties: true });
 
 const clearDb = async () => {
   await firebase.clearFirestoreData({ projectId });

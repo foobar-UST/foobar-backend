@@ -9,7 +9,7 @@ module.exports = async function updateRatingUserInfoTask(change, context) {
     prevUserDetail.photo_url !== newUserDetail.photo_url;
 
   if (requireUpdate) {
-    await Rating.updateFor(userId, {
+    await Rating.updateUserInfo(userId, {
       username: newUserDetail.username,
       user_photo_url: newUserDetail.photo_url
     });

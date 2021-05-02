@@ -20,7 +20,9 @@ const isSameDay = (d1, d2) => {
  */
 const convertHKTimeZone = (date) => {
   return new Date(
-    (typeof date === "string" ? new Date(date) : date).toLocaleString("en-US", { timeZone: 'Asia/Hong_Kong' })
+    (typeof date === "string" ? new Date(date) : date).toLocaleString(
+      'en-US', { timeZone: 'Asia/Hong_Kong' }
+    )
   );
 };
 
@@ -29,8 +31,9 @@ const convertHKTimeZone = (date) => {
  * @param date
  */
 const get12HourString = date => {
-  let hours = date.getHours();
-  let minutes = date.getMinutes();
+  const dateTz = convertHKTimeZone(date);
+  let hours = dateTz.getHours();
+  let minutes = dateTz.getMinutes();
   const suffix = hours >= 12 ? 'PM' : 'AM';
 
   hours = hours % 12;
@@ -45,7 +48,8 @@ const get12HourString = date => {
  * @param date
  */
 const getShortDateString = date => {
-  return `${date.getDate()}/${date.getMonth() + 1}`;
+  const dateTz = convertHKTimeZone(date);
+  return `${dateTz.getDate()}/${dateTz.getMonth() + 1}`;
 };
 
 
@@ -54,7 +58,8 @@ const getShortDateString = date => {
  * @param date
  */
 const getLongDateString = date => {
-  return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
+  const dateTz = convertHKTimeZone(date);
+  return `${dateTz.getFullYear()}-${dateTz.getMonth() + 1}-${dateTz.getDate()}`;
 };
 
 module.exports = {

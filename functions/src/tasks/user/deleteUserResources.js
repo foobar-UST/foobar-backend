@@ -1,8 +1,8 @@
-const User = require("../../models/User");
-const CartItem = require("../../models/CartItem");
-const UserCart = require("../../models/UserCart");
-const Seller = require("../../models/Seller");
-const Rating = require("../../models/Rating");
+const User = require('../../models/User');
+const CartItem = require('../../models/CartItem');
+const UserCart = require('../../models/UserCart');
+const Seller = require('../../models/Seller');
+const Rating = require('../../models/Rating');
 
 /**
  * Clean up the resources when a user is deleted from Auth.

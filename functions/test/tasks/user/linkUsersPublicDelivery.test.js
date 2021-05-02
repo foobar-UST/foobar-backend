@@ -1,23 +1,14 @@
-const { db, admin, clearDb } = require('../../../config.test');
+const { db, clearDb } = require('../../../config.test');
 const { delay } = require('../../utils/testUtils');
 const { assert } = require('chai');
+const { fakeUser } = require('../../utils/testFakes');
 
-const testUserId = 'test_user';
-
-const testUserDoc = {
-  id: testUserId,
-  username: 'testuser',
-  email: 'testuser@test.com',
-  name: 'Test User',
-  phone_num: '12345678',
-  photo_url: 'about:blank',
-  updated_at: admin.firestore.Timestamp.now()
-};
+const testUserId = fakeUser.id;
 
 describe('Test delete: linkUsersPublicDelivery', async () => {
   before(async () => {
     // Create new user document.
-    await db.doc(`users/${testUserId}`).set(testUserDoc);
+    await db.doc(`users/${testUserId}`).set(fakeUser);
 
     // Delete user document
     await db.doc(`users/${testUserId}`).delete();
@@ -45,22 +36,11 @@ describe('Test delete: linkUsersPublicDelivery', async () => {
 });
 
 describe('Test update: linkUsersPublicDelivery', () => {
-  const testUserId = 'test_user';
-  const newPhotoUrl = 'localhost:8080';
+  const newPhotoUrl = 'localhost';
 
   before(async () => {
     // Create new user document.
-    const testUserDoc = {
-      id: testUserId,
-      username: 'testuser',
-      email: 'testuser@test.com',
-      name: 'Test User',
-      phone_num: '12345678',
-      photo_url: 'about:blank',
-      updated_at: admin.firestore.Timestamp.now()
-    };
-
-    await db.doc(`users/${testUserId}`).set(testUserDoc);
+    await db.doc(`users/${testUserId}`).set(fakeUser);
 
     // Update user document
     await db.doc(`users/${testUserId}`).update({
@@ -104,21 +84,9 @@ describe('Test update: linkUsersPublicDelivery', () => {
 });
 
 describe('Test create: linkUsersPublicDelivery', () => {
-  const testUserId = 'test_user';
-
   before(async () => {
     // Create new user document.
-    const testUserDoc = {
-      id: testUserId,
-      username: 'testuser',
-      email: 'testuser@test.com',
-      name: 'Test User',
-      phone_num: '12345678',
-      photo_url: 'about:blank',
-      updated_at: admin.firestore.Timestamp.now()
-    };
-
-    await db.doc(`users/${testUserId}`).set(testUserDoc);
+    await db.doc(`users/${testUserId}`).set(fakeUser);
 
     await delay(3000);
   });
