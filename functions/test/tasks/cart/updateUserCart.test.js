@@ -18,7 +18,7 @@ describe('Test updateUserCart', async () => {
     // Insert a new cart item
     await db.doc(`users/${fakeUser.id}/cart_items/${fakeCartItem.id}`).set(fakeCartItem);
 
-    await delay(4000);
+    await delay(5000);
   });
 
   afterEach(async () => {
@@ -32,8 +32,6 @@ describe('Test updateUserCart', async () => {
 
     const deliveryDate = getShortDateString(fakeSection.delivery_time.toDate());
     const deliveryTime = get12HourString(fakeSection.delivery_time.toDate());
-
-    console.log(deliveryDate)
 
     const { updated_at, ...result } = userCart.data();
 

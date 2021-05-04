@@ -9,7 +9,7 @@ module.exports = async function linkItemsBasicTask(change, context) {
   const itemId      = context.params.itemId;
 
   // Delete 'items_basic' document
-  if (itemDetail === null) {
+  if (!itemDetail) {
     return await SellerItem.deleteBasic(sellerId, itemId);
   }
 

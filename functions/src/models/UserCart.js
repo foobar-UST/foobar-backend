@@ -8,21 +8,20 @@ class UserCart {
     return document.exists ? document.data() : null;
   }
 
-  static async getUserIdsBy(field, value) {
+  static async getWithSection(sectionId) {
     const snapshot = await db.collection(USER_CARTS_COLLECTION)
-      .where(field, '==', value)
+      .where('section_id', '==', sectionId)
       .get();
 
-    if (snapshot.empty) {
-      return [];
-    }
+    return snapshot.docs.map(doc => doc.data());
+  }
 
-    const userCarts = [];
-    snapshot.forEach(doc => {
-      userCarts.push(doc.data().user_id);
-    });
+  static async getWithSeller(sellerId) {
+    const snapshot = await db.collection(USER_CARTS_COLLECTION)
+      .where('seller_id', '==', sellerId)
+      .get();
 
-    return userCarts;
+    return snapshot.docs.map(doc => doc.data());
   }
 
   static async update(userId, data) {
