@@ -115,10 +115,28 @@ const fakeOrder = userId => {
   }
 };
 
+const fakeItem = sellerId => {
+  return {
+    id: uuidv4(),
+    title: 'Cappuccino',
+    title_zh: '意大利泡沫咖啡',
+    description: 'description',
+    description_zh: 'description_zh',
+    catalog_id: '8bfc2dbb-390f-474e-bab6-ae897288d059',
+    seller_id: sellerId,
+    price: 20.5,
+    image_url: 'about:blank',
+    count: 50,
+    available: true,
+    updated_at: admin.firestore.Timestamp.now()
+  };
+};
+
 module.exports = {
   fakeUser,
   fakeSeller,
   fakeSection,
   fakeCartItem,
-  fakeOrder
+  fakeOrder,
+  fakeItem
 };

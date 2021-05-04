@@ -20,7 +20,7 @@ exports.sectionUpdateRequireCartSync = functions.firestore
 // Link section state to orders state.
 exports.linkSectionStateToOrderState = functions.firestore
   .document(`${SELLERS_COLLECTION}/{sellerId}/${SELLER_SECTIONS_SUB_COLLECTION}/{sectionId}`)
-  .onUpdate(linkSectionStateToOrderStateTask);
+  .onWrite(linkSectionStateToOrderStateTask);
 
 // Link section location to order location.
 exports.linkSectionLocationToOrderLocation = functions.firestore

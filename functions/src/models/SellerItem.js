@@ -55,6 +55,7 @@ class SellerItem {
     const docRef = db.doc(
       `${SELLERS_COLLECTION}/${sellerId}/${SELLER_ITEMS_BASIC_SUB_COLLECTION}/${itemId}`
     );
+
     await docRef.set(itemBasic);
   }
 

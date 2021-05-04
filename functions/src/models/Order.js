@@ -1,7 +1,45 @@
+const OrderState = require('./OrderState');
 const { db, admin } = require('../../config');
 const { ORDERS_BASIC_COLLECTION, ORDERS_COLLECTION } = require('../../constants');
 
 class Order {
+
+  static async getDetailsBySection(sectionId) {
+    const snapshot = await db.collection(ORDERS_COLLECTION)
+      .where('section_id', '==', sectionId)
+      .get();
+
+    return snapshot.docs.map(doc => doc.data());
+  }
+
+  static async getDetailsBySeller(sellerId) {
+    const snapshot = await db.collection(ORDERS_COLLECTION)
+      .where('seller_id', '==', sellerId)
+      .get();
+
+    return snapshot.docs.map(doc => doc.data());
+  }
+
+  static async getDetailsByUser(userId) {
+    const snapshot = await db.collection(ORDERS_COLLECTION)
+      .where('user_id', '==', userId)
+      .get();
+
+    return snapshot.docs.map(doc => doc.data());
+  }
+
+  static async getDetailsActive(sectionId) {
+    const snapshot = await db.collection(ORDERS_COLLECTION)
+      .where('section_id', '==', sectionId)
+      .where('state', 'not-in', [
+        OrderState.DELIVERED,
+        OrderState.ARCHIVED,
+        OrderState.CANCELLED
+      ])
+      .get();
+
+    return snapshot.docs.map(doc => doc.data());
+  }
 
   static getOrderDetailCollectionRef() {
     return db.collection(ORDERS_COLLECTION)

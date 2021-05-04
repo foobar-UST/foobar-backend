@@ -1,4 +1,4 @@
-const Order = require("../../models/Order");
+const Order = require('../../models/Order');
 
 module.exports = async function sectionUpdateOrderSyncTask(change, context) {
   const sectionId = context.params.sectionId;
@@ -13,11 +13,8 @@ module.exports = async function sectionUpdateOrderSyncTask(change, context) {
   }
 
   // Get the ids of the orders that require sync.
-  const orderIdsSnapshot = await Order.getOrderDetailCollectionRef()
-    .where('section_id', '==', sectionId)
-    .get();
-
-  const orderIds = orderIdsSnapshot.docs.map(doc => doc.data().id);
+  const orderDetails = await Order.getDetailsBySection(sectionId);
+  const orderIds = orderDetails.map(order => order.id);
 
   const updateOrderPromises = orderIds.map(orderId => {
     return Order.updateDetail(orderId, {

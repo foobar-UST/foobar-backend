@@ -14,6 +14,7 @@ module.exports = async function linkSellersBasicTask(change, context) {
 
   // Update 'sellers_basic' document
   return await Seller.createBasic(sellerId, {
+    id:             sellerDetail.id,
     name:           sellerDetail.name,
     name_zh:        sellerDetail.name_zh,
     image_url:      sellerDetail.image_url,

@@ -54,7 +54,6 @@ class Seller {
 
   static async createBasic(sellerId, sellerBasic) {
     const docRef = db.doc(`${SELLERS_BASIC_COLLECTION}/${sellerId}`);
-    Object.assign(sellerBasic, { id: sellerId });
     await docRef.set(sellerBasic);
   }
 

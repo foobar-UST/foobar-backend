@@ -20,16 +20,8 @@ module.exports = async function linkSectionLocationToOrderLocationTask(change, c
   }
 
   // Get the associated orders.
-  const activeOrderIdsSnapshot = await Order.getOrderDetailCollectionRef()
-    .where('section_id', '==', sectionId)
-    .where('state', 'not-in', [
-      OrderState.DELIVERED,
-      OrderState.ARCHIVED,
-      OrderState.CANCELLED
-    ])
-    .get();
-
-  const activeOrderIds = activeOrderIdsSnapshot.docs.map(doc => doc.data().id);
+  const orderDetails = await Order.getDetailsActive(sectionId);
+  const activeOrderIds = orderDetails.map(order => order.id);
 
   const updateOrderLocationPromises = activeOrderIds.map(orderId => {
     return Order.updateDetail(orderId, {

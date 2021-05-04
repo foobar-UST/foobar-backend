@@ -68,12 +68,12 @@ const addUserCartItem = async (req, res) => {
     }
 
     // Reject if the user attempts to add a new cart item to an ordered section
-    const existingOrderSnapshot = await Order.getOrderDetailCollectionRef()
-      .where('user_id', '==', userId)
-      .where('section_id', '==', itemSectionId)
-      .get();
+    const orderDetails = await Order.getDetailsByUser(userId);
+    const userSectionIds = orderDetails.map(order => order.section_id);
 
-    if (!existingOrderSnapshot.empty) {
+    const isAddToSameSection = userSectionIds.includes(itemSectionId);
+
+    if (isAddToSameSection) {
       return sendErrorResponse(res, 403, ADD_USER_CART_ITEM_MULTIPLE_ORDERS_ERROR);
     }
   }

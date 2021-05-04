@@ -8,7 +8,6 @@ module.exports = async function sectionUpdateRequireCartSyncTask(change, context
 
   // Clear user cart if the section is unavailable or deleted.
   if (!newSectionDetail.available) {
-    console.log('[SectionUpdateRequireCartSync]: Unavailable section. Clearing user carts.');
     const userIds = await UserCart.getUserIdsBy('section_id', sectionId);
     return await CartItem.deleteAllForUsers(userIds);
   }
