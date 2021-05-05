@@ -34,8 +34,12 @@ class SellerItem {
     return snapshot.docs.map(doc => doc.data().id);
   }
 
-  static async updateDetail(sellerId, itemId, data) {
-    const docRef = db.doc(`${SELLERS_COLLECTION}/${sellerId}/${SELLER_ITEMS_SUB_COLLECTION}/${itemId}`);
+  static async updateDetail(itemId, data) {
+    const snapshot = await db.collectionGroup(SELLER_ITEMS_SUB_COLLECTION)
+      .where('id', '==', itemId)
+      .get();
+
+    const docRef = snapshot.docs[0].ref;
 
     Object.assign(data, {
       updated_at:  admin.firestore.FieldValue.serverTimestamp()

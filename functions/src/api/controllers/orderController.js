@@ -183,7 +183,7 @@ const placeOrder = async (req, res) => {
 
   // Decrement the quantity of purchased seller items
   await Promise.all(cartItems.map(cartItem => {
-    return SellerItem.updateDetail(sellerId, cartItem.item_id, {
+    return SellerItem.updateDetail(cartItem.item_id, {
       count: admin.firestore.FieldValue.increment(-cartItem.amounts)
     });
   }));

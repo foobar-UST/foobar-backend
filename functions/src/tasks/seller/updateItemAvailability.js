@@ -1,41 +1,38 @@
-const SellerItem = require("../../models/SellerItem");
+const SellerItem = require('../../models/SellerItem');
 
 module.exports = async function updateItemAvailabilityTask(change, context) {
-  const catalog   = change.after.exists ? change.after.data() : null;
+  const prevCatalogDetail = change.before.exists ? change.before.data() : null;
+  const newCatalogDetail = change.after.exists ? change.after.data() : null;
   const sellerId  = context.params.sellerId;
   const catalogId = context.params.catalogId;
 
-  // When the catalog is deleted, find all items belong to that catalog,
-  // and set catalog_id field to null
-  if (catalog === null) {
-    const itemIds = await SellerItem.getIdsWithCatalog(sellerId, catalogId);
-    const detachItemJobs = [];
+  const isDelete = !newCatalogDetail;
+  const isUpdate =
+    prevCatalogDetail && newCatalogDetail &&
+    prevCatalogDetail.available !== newCatalogDetail.available;
 
-    itemIds.forEach(itemId => {
-      detachItemJobs.push(
-        SellerItem.updateDetail(sellerId, itemId, { catalog_id: null })
-      );
+  // When the catalog is deleted, detach all its items.
+  if (isDelete) {
+    const itemIds = await SellerItem.getIdsWithCatalog(sellerId, catalogId);
+    const updateJobs = itemIds.map(itemId => {
+      return SellerItem.updateDetail(itemId, {
+        catalog_id: null
+      });
     });
 
-    return await Promise.all(detachItemJobs);
+    return await Promise.all(updateJobs);
   }
 
-  // When the catalog's available state has changed,
-  // update the availability of all items as well.
-  const oldAvailableState = change.before.data().available;
-  const newAvailableState = change.after.data().available;
-
-  if (oldAvailableState !== newAvailableState) {
+  // When the catalog's availability has changed, update the availability of all items.
+  if (isUpdate) {
     const itemIds = await SellerItem.getIdsWithCatalog(sellerId, catalogId);
-    const updateAvailabilityJobs = [];
-
-    itemIds.forEach(itemId => {
-      updateAvailabilityJobs.push(
-        SellerItem.updateDetail(sellerId, itemId, { available: newAvailableState })
-      );
+    const updateJobs = itemIds.map(itemId => {
+      return SellerItem.updateDetail(itemId, {
+        available: newCatalogDetail.available
+      });
     });
 
-    return await Promise.all(updateAvailabilityJobs);
+    return await Promise.all(updateJobs);
   }
 
   return true;
