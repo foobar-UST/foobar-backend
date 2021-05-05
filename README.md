@@ -1,8 +1,12 @@
 # foobar-backends
 Foobar++ is a group ordering and delivery application.
 
-## Changelog
-See all the changes here [CHANGELOG.md](CHANGELOG.md).
+## Dependencies
+- To install required dependencies
+```console
+cd ./functions
+npm install
+```
 
 ## Endpoints
 https://asia-east2-foobar-group-delivery-app.cloudfunctions.net
@@ -244,6 +248,3 @@ firebase deploy --only functions:group_name
 ```console
 firebase emulators:start --import=./emulator --export-on-exit
 ```
-
-## Disable functions
-- To disable functions, simply uncomment them and re-deploy again to Firebase.
