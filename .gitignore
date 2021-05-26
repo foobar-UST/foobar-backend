@@ -9,8 +9,8 @@ firebase-debug.*.log*
 
 # Firebase emulator
 .firebase/
-.emulator/
-.emulator-test/
+emulator/
+emulator-test/
 
 # Firebase config
 
